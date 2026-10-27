@@ -1,0 +1,264 @@
+
+/* =================================
+   BRICKLAB — DESIGN FOUNDATION
+   ================================= */
+
+:root {
+    --color-background: #111116;
+    --color-surface: #1b1b24;
+    --color-surface-hover: #252532;
+    --color-border: #30303d;
+
+    --color-primary: #a78bfa;
+    --color-primary-hover: #8b5cf6;
+    --color-accent: #22d3ee;
+
+    --color-text: #f4f4f8;
+    --color-text-muted: #a1a1b5;
+
+    --font-family: Arial, Helvetica, sans-serif;
+
+    --radius-small: 8px;
+    --radius-medium: 14px;
+    --radius-large: 20px;
+
+    --transition-fast: 180ms ease;
+}
+
+/* Reset */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-family);
+    line-height: 1.6;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button {
+    cursor: pointer;
+}
+
+/* Reusable layout */
+
+.container {
+    width: min(1200px, calc(100% - 40px));
+    margin-inline: auto;
+}
+
+.surface {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+}
+
+/* Accessible keyboard focus */
+
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+}
+
+/* Respect reduced-motion preferences */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+
+/* Header */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(17, 17, 22, 0.92);
+    border-bottom: 1px solid var(--color-border);
+    backdrop-filter: blur(14px);
+}
+
+.header-inner {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+}
+
+.brand-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    color: #111116;
+    background: var(--color-primary);
+}
+
+.brand-accent {
+    color: var(--color-primary);
+}
+
+.main-navigation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.main-navigation a {
+    padding: 10px 14px;
+    border-radius: var(--radius-small);
+    color: var(--color-text-muted);
+    transition:
+        color var(--transition-fast),
+        background var(--transition-fast);
+}
+
+.main-navigation a:hover,
+.main-navigation a.active {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+}
+
+.main-navigation a.active {
+    box-shadow: inset 0 -2px var(--color-accent);
+}
+
+.menu-toggle {
+    display: none;
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.menu-toggle span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    margin: 5px 0;
+    background: currentColor;
+}
+
+/* Main content */
+
+.main-content {
+    min-height: calc(100vh - 150px);
+    padding-top: 40px;
+    padding-bottom: 64px;
+}
+
+/* Footer */
+
+.site-footer {
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.footer-inner {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-block: 16px;
+}
+
+.footer-inner p {
+    margin: 0;
+}
+
+.footer-inner span {
+    font-size: 0.9rem;
+    color: var(--color-primary);
+}
+
+/* Mobile navigation layout */
+
+@media (max-width: 700px) {
+    .header-inner {
+        position: relative;
+        min-height: 68px;
+    }
+
+    .menu-toggle {
+        display: block;
+    }
+
+    .main-navigation {
+        display: none;
+        position: absolute;
+        top: calc(100% - 1px);
+        left: 0;
+        right: 0;
+        padding: 12px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 0 0 var(--radius-medium) var(--radius-medium);
+    }
+
+    .main-navigation.is-open {
+        display: flex;
+    }
+
+    .main-navigation a {
+        padding: 12px;
+    }
+
+    .main-content {
+        padding-top: 28px;
+    }
+
+    .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+    }
+}
