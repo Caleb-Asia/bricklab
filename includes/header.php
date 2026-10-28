@@ -12,6 +12,12 @@ $currentPage = $currentPage ?? 'dashboard';
 
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?> | BrickLab</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet"
+    >
     <link rel="stylesheet" href="/bricklab/assets/css/style.css">
 </head>
 <body>

@@ -16,7 +16,7 @@
     --color-text: #f4f4f8;
     --color-text-muted: #a1a1b5;
 
-    --font-family: Arial, Helvetica, sans-serif;
+    --font-family: "Outfit", "Segoe UI", Arial, Helvetica, sans-serif;
 
     --radius-small: 8px;
     --radius-medium: 14px;
@@ -41,6 +41,7 @@ body {
     background: var(--color-background);
     color: var(--color-text);
     font-family: var(--font-family);
+    font-weight: 400;
     line-height: 1.6;
 }
 
@@ -123,7 +124,7 @@ button {
     align-items: center;
     gap: 10px;
     font-size: 1.35rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -0.04em;
 }
 
@@ -151,6 +152,7 @@ button {
     padding: 10px 14px;
     border-radius: var(--radius-small);
     color: var(--color-text-muted);
+    font-weight: 500;
     transition:
         color var(--transition-fast),
         background var(--transition-fast);
@@ -327,7 +329,7 @@ button {
     margin: 0 0 4px 12px;
     color: var(--color-text-muted);
     font-size: 0.7rem;
-    font-weight: 700;
+    font-weight: 500;
     letter-spacing: 0.14em;
 }
 
@@ -343,6 +345,7 @@ button {
     gap: 13px;
     min-height: 46px;
     padding: 11px 13px;
+    font-weight: 500;
     border: 1px solid transparent;
     border-radius: var(--radius-small);
     color: var(--color-text-muted);
@@ -418,7 +421,7 @@ button {
 .menu-toggle {
     display: grid;
     place-content: center;
-    gap: 5px;
+    gap: 4px;
     width: 42px;
     height: 42px;
     padding: 9px;
@@ -432,8 +435,31 @@ button {
     display: block;
     width: 21px;
     height: 2px;
+    margin: 0;
     border-radius: 2px;
     background: currentColor;
+    transition:
+        transform 220ms ease,
+        opacity 160ms ease,
+        background-color var(--transition-fast);
+}
+
+.menu-toggle[aria-expanded="true"] span:first-child {
+    transform: translateY(6px) rotate(45deg);
+}
+
+.menu-toggle[aria-expanded="true"] span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0.35);
+}
+
+.menu-toggle[aria-expanded="true"] span:last-child {
+    transform: translateY(-6px) rotate(-45deg);
+}
+
+.menu-toggle:hover {
+    color: var(--color-primary);
+    border-color: rgba(167, 139, 250, 0.55);
 }
 
 .sidebar-backdrop {
@@ -475,15 +501,22 @@ button {
         width: min(290px, 85vw);
         padding-top: 24px;
         transform: translateX(-105%);
+        opacity: 0;
         visibility: hidden;
         transition:
-            transform 220ms ease,
-            visibility 220ms ease;
+            transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 220ms ease,
+            visibility 0s linear 300ms;
     }
 
     .sidebar.is-open {
         transform: translateX(0);
+        opacity: 1;
         visibility: visible;
+        transition:
+            transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 220ms ease,
+            visibility 0s;
     }
 
     .sidebar-brand-row {
@@ -574,20 +607,24 @@ button {
     min-height: 290px;
     padding: 38px 42px;
     overflow: hidden;
-    border: 1px solid rgba(167, 139, 250, 0.22);
+    border: 1px solid rgba(167, 139, 250, 0.26);
     border-radius: var(--radius-large);
     background:
         radial-gradient(
             ellipse at 90% 20%,
-            rgba(34, 211, 238, 0.12),
+            rgba(34, 211, 238, 0.1),
             transparent 36%
         ),
         radial-gradient(
             ellipse at 15% 100%,
-            rgba(139, 92, 246, 0.16),
+            rgba(139, 92, 246, 0.14),
             transparent 45%
         ),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.025), transparent 58%),
         var(--color-surface);
+    box-shadow:
+        0 18px 48px rgba(0, 0, 0, 0.16),
+        inset 0 1px rgba(255, 255, 255, 0.045);
 }
 
 .welcome-copy {
@@ -600,7 +637,7 @@ button {
 .section-kicker {
     color: var(--color-accent);
     font-size: 0.72rem;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.13em;
 }
 
@@ -621,6 +658,7 @@ button {
 .dashboard-welcome h1 {
     margin: 18px 0 12px;
     font-size: clamp(2rem, 3.3vw, 3.2rem);
+    font-weight: 700;
     line-height: 1.12;
     letter-spacing: -0.055em;
 }
@@ -646,7 +684,7 @@ button {
     border: 1px solid transparent;
     border-radius: 10px;
     font-size: 0.9rem;
-    font-weight: 700;
+    font-weight: 600;
     text-align: center;
     transition:
         transform var(--transition-fast),
@@ -812,6 +850,7 @@ button {
 .section-heading h2 {
     margin: 5px 0 0;
     font-size: 1.45rem;
+    font-weight: 700;
     letter-spacing: -0.035em;
 }
 
@@ -823,6 +862,7 @@ button {
 .updated-label {
     color: var(--color-text-muted);
     font-size: 0.82rem;
+    font-weight: 500;
 }
 
 .section-subtitle {
@@ -844,15 +884,20 @@ button {
     padding: 20px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-medium);
-    background: var(--color-surface);
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.025), transparent 60%),
+        var(--color-surface);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     transition:
         border-color var(--transition-fast),
-        transform var(--transition-fast);
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast);
 }
 
 .stat-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: rgba(167, 139, 250, 0.45);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
 }
 
 .stat-top {
@@ -865,6 +910,7 @@ button {
 .stat-label {
     color: var(--color-text-muted);
     font-size: 0.83rem;
+    font-weight: 500;
 }
 
 .stat-icon {
@@ -875,6 +921,12 @@ button {
     flex-shrink: 0;
     border-radius: 10px;
     font-size: 1.15rem;
+}
+
+.stat-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
 }
 
 .purple-icon {
@@ -900,7 +952,7 @@ button {
 .stat-number {
     margin: 20px 0 5px;
     font-size: 2rem;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: -0.05em;
 }
@@ -920,6 +972,9 @@ button {
     align-items: center;
     padding: 38px 24px;
     text-align: center;
+    box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.12),
+        inset 0 1px rgba(255, 255, 255, 0.035);
 }
 
 .empty-art {
@@ -977,6 +1032,7 @@ button {
 .empty-state h3 {
     margin: 10px 0 8px;
     font-size: 1.2rem;
+    font-weight: 700;
 }
 
 .empty-state > p {
@@ -991,6 +1047,7 @@ button {
     margin-top: 16px;
     color: var(--color-text-muted);
     font-size: 0.76rem;
+    font-weight: 500;
 }
 
 /* Getting started cards */
@@ -1006,14 +1063,24 @@ button {
     min-width: 0;
     padding: 22px;
     overflow: hidden;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.025), transparent 60%),
+        var(--color-surface);
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.1),
+        inset 0 1px rgba(255, 255, 255, 0.035);
     transition:
         border-color var(--transition-fast),
-        transform var(--transition-fast);
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast);
 }
 
 .step-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: rgba(34, 211, 238, 0.35);
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.16),
+        inset 0 1px rgba(255, 255, 255, 0.045);
 }
 
 .step-number {
@@ -1022,7 +1089,7 @@ button {
     right: 18px;
     color: #77778b;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .step-icon {
@@ -1040,6 +1107,7 @@ button {
 .step-card h3 {
     margin: 0 0 8px;
     font-size: 1rem;
+    font-weight: 700;
 }
 
 .step-card p {
@@ -1207,11 +1275,10 @@ body.sidebar-collapsed .sidebar .brand {
     margin-right: 0;
 }
 
-body.sidebar-collapsed .sidebar .brand-name,
-body.sidebar-collapsed .sidebar-label,
-body.sidebar-collapsed .sidebar-link > span:not(.nav-icon),
-body.sidebar-collapsed .sidebar-tip {
-    display: none;
+body.sidebar-collapsed .sidebar .brand-name {
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
 }
 
 body.sidebar-collapsed .sidebar-collapse-toggle {
@@ -1229,34 +1296,58 @@ body.sidebar-collapsed .sidebar-navigation {
     margin-top: 0;
 }
 
+body.sidebar-collapsed .sidebar-label {
+    max-height: 0;
+    margin-block: 0;
+    opacity: 0;
+    visibility: hidden;
+}
+
 body.sidebar-collapsed .sidebar-link {
     justify-content: center;
     padding-inline: 8px;
+}
+
+body.sidebar-collapsed .sidebar-link > span:not(.nav-icon) {
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
 }
 
 body.sidebar-collapsed .nav-icon {
     font-size: 1.35rem;
 }
 
+body.sidebar-collapsed .sidebar-bottom {
+    max-height: 0;
+    margin-top: 12px;
+    padding-top: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
 body.sidebar-collapsed .sidebar-link {
     position: relative;
 }
 
-body.sidebar-collapsed .sidebar-link:hover::after {
-    content: attr(aria-label);
-    position: absolute;
-    left: calc(100% + 12px);
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 400;
-    padding: 7px 10px;
-    border: 1px solid var(--color-border);
-    border-radius: 7px;
-    background: var(--color-surface);
-    color: var(--color-text);
-    white-space: nowrap;
-    font-size: 0.8rem;
-    pointer-events: none;
+@media (min-width: 801px) {
+    body.sidebar-collapsed .sidebar-link:is(:hover, :focus-visible)::after {
+        content: attr(aria-label);
+        position: absolute;
+        left: calc(100% + 12px);
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 400;
+        padding: 7px 10px;
+        border: 1px solid var(--color-border);
+        border-radius: 7px;
+        background: var(--color-surface);
+        color: var(--color-text);
+        white-space: nowrap;
+        font-size: 0.8rem;
+        pointer-events: none;
+    }
 }
 
 /* Keep the collapse control out of the mobile slide-out menu */
@@ -1267,6 +1358,37 @@ body.sidebar-collapsed .sidebar-link:hover::after {
 
     body.sidebar-collapsed {
         --sidebar-width: 250px;
+    }
+
+    body.sidebar-collapsed .sidebar .brand {
+        justify-content: flex-start;
+    }
+
+    body.sidebar-collapsed .sidebar .brand-name,
+    body.sidebar-collapsed .sidebar-label,
+    body.sidebar-collapsed .sidebar-link > span:not(.nav-icon) {
+        max-width: none;
+        opacity: 1;
+        visibility: visible;
+    }
+
+    body.sidebar-collapsed .sidebar-label {
+        max-height: 2rem;
+        margin: 0 0 4px 12px;
+    }
+
+    body.sidebar-collapsed .sidebar-link {
+        justify-content: flex-start;
+        padding-inline: 13px;
+    }
+
+    body.sidebar-collapsed .sidebar-bottom {
+        max-height: none;
+        margin-top: auto;
+        padding-top: 32px;
+        opacity: 1;
+        overflow: visible;
+        pointer-events: auto;
     }
 }
 
@@ -1290,7 +1412,9 @@ body.sidebar-collapsed .sidebar-link:hover::after {
 /* Smooth desktop sidebar collapse */
 @media (min-width: 801px) {
     .sidebar {
-        transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
+        transition:
+            width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+            padding 320ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .main-wrapper,
@@ -1303,7 +1427,42 @@ body.sidebar-collapsed .sidebar-link:hover::after {
     }
 
     .sidebar .brand {
-        transition: gap 220ms ease;
+        transition:
+            gap 220ms ease,
+            margin 220ms ease;
+    }
+
+    .sidebar .brand-name,
+    .sidebar-label,
+    .sidebar-link > span:not(.nav-icon) {
+        overflow: hidden;
+        white-space: nowrap;
+        transition:
+            max-width 260ms ease,
+            max-height 260ms ease,
+            margin 260ms ease,
+            opacity 180ms ease,
+            visibility 180ms ease;
+    }
+
+    .sidebar .brand-name {
+        max-width: 160px;
+    }
+
+    .sidebar-label {
+        max-height: 2rem;
+    }
+
+    .sidebar-link > span:not(.nav-icon) {
+        max-width: 180px;
+    }
+
+    .sidebar-bottom {
+        max-height: 240px;
+        transition:
+            max-height 280ms ease,
+            padding 280ms ease,
+            opacity 180ms ease;
     }
 
     .sidebar-link {

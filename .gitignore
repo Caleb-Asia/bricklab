@@ -1,7 +1,13 @@
 
-# Local configuration and secrets
+# Environment variables and local secrets
 .env
+.env.*
+!.env.example
 config.local.php
+
+# Local database configuration
+# Uncomment this if config/database.php contains hardcoded credentials
+# config/database.php
 
 # PHP dependencies
 /vendor/
@@ -12,6 +18,16 @@ config.local.php
 # Operating system files
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Editor settings
 .vscode/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Local test and debug files
+test-connection.php
+debug.php

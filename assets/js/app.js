@@ -1,5 +1,9 @@
 ﻿
 document.addEventListener("DOMContentLoaded", () => {
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+
     // ==========================================
     // BRICKLAB — SITE-WIDE CURSOR GLOW
     // ==========================================

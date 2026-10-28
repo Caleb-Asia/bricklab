@@ -14,6 +14,10 @@
 
 <?php if (($currentPage ?? null) === 'dashboard'): ?>
     <script
+        src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"
+        defer
+    ></script>
+    <script
         src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"
         defer
     ></script>

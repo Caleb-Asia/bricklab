@@ -67,7 +67,9 @@ require_once __DIR__ . '/includes/header.php';
         <article class="stat-card">
             <div class="stat-top">
                 <span class="stat-label">Total builds</span>
-                <span class="stat-icon purple-icon" aria-hidden="true">▤</span>
+                <span class="stat-icon purple-icon" aria-hidden="true">
+                    <i data-lucide="blocks">▤</i>
+                </span>
             </div>
 
             <p class="stat-number">0</p>
@@ -77,7 +79,9 @@ require_once __DIR__ . '/includes/header.php';
         <article class="stat-card">
             <div class="stat-top">
                 <span class="stat-label">In progress</span>
-                <span class="stat-icon cyan-icon" aria-hidden="true">◷</span>
+                <span class="stat-icon cyan-icon" aria-hidden="true">
+                    <i data-lucide="clock-3">◷</i>
+                </span>
             </div>
 
             <p class="stat-number">0</p>
@@ -87,7 +91,9 @@ require_once __DIR__ . '/includes/header.php';
         <article class="stat-card">
             <div class="stat-top">
                 <span class="stat-label">Completed</span>
-                <span class="stat-icon green-icon" aria-hidden="true">✓</span>
+                <span class="stat-icon green-icon" aria-hidden="true">
+                    <i data-lucide="circle-check">✓</i>
+                </span>
             </div>
 
             <p class="stat-number">0</p>
@@ -97,7 +103,9 @@ require_once __DIR__ . '/includes/header.php';
         <article class="stat-card">
             <div class="stat-top">
                 <span class="stat-label">Tasks completed</span>
-                <span class="stat-icon orange-icon" aria-hidden="true">☑</span>
+                <span class="stat-icon orange-icon" aria-hidden="true">
+                    <i data-lucide="list-checks">☑</i>
+                </span>
             </div>
 
             <p class="stat-number">0</p>
