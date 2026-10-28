@@ -66,6 +66,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 }
 
+$authHeadline = 'Your next idea starts here.';
 require __DIR__ . '/includes/auth-header.php';
 ?>
             <p class="section-kicker">START BUILDING</p>

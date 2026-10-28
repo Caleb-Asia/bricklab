@@ -53,6 +53,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 }
 
+$authHeadline = 'Welcome back to your workshop.';
 require __DIR__ . '/includes/auth-header.php';
 ?>
             <p class="section-kicker">WELCOME BACK</p>
