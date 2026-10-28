@@ -687,6 +687,26 @@ button {
     flex-shrink: 0;
 }
 
+.welcome-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 350ms ease;
+}
+
+.welcome-art.is-3d-ready .welcome-canvas {
+    opacity: 1;
+}
+
+.welcome-art.is-3d-ready .art-block {
+    visibility: hidden;
+}
+
 .art-glow {
     position: absolute;
     inset: 35px 10px;
@@ -1141,7 +1161,8 @@ button {
 @media (prefers-reduced-motion: reduce) {
     .stat-card,
     .step-card,
-    .btn {
+    .btn,
+    .welcome-canvas {
         transition: none;
     }
 

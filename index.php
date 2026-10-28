@@ -28,6 +28,7 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
     <div class="welcome-art" aria-hidden="true">
+        <canvas class="welcome-canvas"></canvas>
         <div class="art-orbit orbit-one"></div>
         <div class="art-orbit orbit-two"></div>
 
