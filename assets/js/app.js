@@ -56,6 +56,122 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // ==========================================
+    // BRICKLAB — DASHBOARD HERO BRICKS
+    // ==========================================
+
+    const hero = document.querySelector(".dashboard-welcome");
+    const bricks = hero ? hero.querySelectorAll(".art-block") : [];
+    const gsap = window.gsap;
+
+    if (hero && bricks.length > 0 && gsap && !reducedMotion.matches) {
+        const rotations = [-14, 12, -5];
+        const brickAnimations = [];
+
+        bricks.forEach((brick, index) => {
+            const rotation = rotations[index] ?? 0;
+            const motion = {
+                x: 0,
+                y: 0,
+                pointerX: 0,
+                pointerY: 0,
+                rotation,
+                scale: 1,
+                opacity: 1,
+            };
+            const renderBrick = () => {
+                gsap.set(brick, {
+                    x: motion.x + motion.pointerX,
+                    y: motion.y + motion.pointerY,
+                    rotation: motion.rotation,
+                    scale: motion.scale,
+                    opacity: motion.opacity,
+                });
+            };
+            const timeline = gsap.timeline({ delay: index * 0.14 });
+
+            brickAnimations.push({ motion, renderBrick });
+
+            timeline.fromTo(
+                motion,
+                {
+                    y: -105,
+                    rotation: rotation - 13,
+                    scale: 0.76,
+                    opacity: 0,
+                },
+                {
+                    y: 0,
+                    rotation,
+                    scale: 1,
+                    opacity: 1,
+                    duration: 1.15,
+                    ease: "elastic.out(1, 0.65)",
+                    onUpdate: renderBrick,
+                }
+            );
+
+            timeline.to(motion, {
+                y: -8,
+                rotation: rotation + 1.5,
+                duration: 3.8 + index * 0.55,
+                ease: "sine.inOut",
+                repeat: -1,
+                yoyo: true,
+                onUpdate: renderBrick,
+            });
+        });
+
+        if (finePointer.matches) {
+            const pointerOffsets = [
+                { x: 6, y: -6 },
+                { x: -7, y: 6 },
+                { x: 5, y: -7 },
+            ];
+            const pointerQuickTos = brickAnimations.map(
+                ({ motion, renderBrick }, index) => {
+                    const offset = pointerOffsets[index] ?? { x: 0, y: 0 };
+                    return {
+                        x: gsap.quickTo(motion, "pointerX", {
+                            duration: 0.9,
+                            ease: "power2.out",
+                            onUpdate: renderBrick,
+                        }),
+                        y: gsap.quickTo(motion, "pointerY", {
+                            duration: 0.9,
+                            ease: "power2.out",
+                            onUpdate: renderBrick,
+                        }),
+                        offset,
+                    };
+                }
+            );
+
+            hero.addEventListener("pointermove", (event) => {
+                const bounds = hero.getBoundingClientRect();
+                if (!bounds.width || !bounds.height) {
+                    return;
+                }
+
+                const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+                const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+
+                pointerQuickTos.forEach((quickTo) => {
+                    quickTo.x(x * quickTo.offset.x);
+                    quickTo.y(y * quickTo.offset.y);
+                });
+            });
+
+            hero.addEventListener("pointerleave", () => {
+                pointerQuickTos.forEach((quickTo) => {
+                    quickTo.x(0);
+                    quickTo.y(0);
+                });
+            });
+        }
+    }
+
     const sidebar = document.getElementById("sidebar");
     const menuToggle = document.getElementById("menu-toggle");
     const backdrop = document.getElementById("sidebar-backdrop");

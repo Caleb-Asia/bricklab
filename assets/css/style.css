@@ -720,7 +720,8 @@ button {
     padding: 7px 10px;
     border-radius: 9px;
     box-shadow:
-        inset 0 -7px rgba(0, 0, 0, 0.16),
+        inset 0 2px 2px rgba(255, 255, 255, 0.34),
+        inset 0 -7px 0 rgba(0, 0, 0, 0.2),
         0 15px 28px rgba(0, 0, 0, 0.25);
 }
 
@@ -728,28 +729,49 @@ button {
     width: 19px;
     height: 12px;
     border-radius: 5px 5px 3px 3px;
-    background: rgba(255, 255, 255, 0.22);
-    box-shadow: inset 0 -2px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background:
+        radial-gradient(
+            ellipse at 32% 20%,
+            rgba(255, 255, 255, 0.58),
+            transparent 58%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.32),
+            rgba(255, 255, 255, 0.08) 42%,
+            rgba(0, 0, 0, 0.2)
+        );
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.42),
+        inset 0 -2px 3px rgba(0, 0, 0, 0.18),
+        0 1px 2px rgba(0, 0, 0, 0.16);
 }
 
 .block-purple {
     top: 45px;
     left: 35px;
-    background: #8b5cf6;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.27), transparent 42%),
+        linear-gradient(180deg, #a477ff 0%, #8b5cf6 58%, #7441d7 100%);
     transform: rotate(-14deg);
 }
 
 .block-cyan {
     top: 105px;
     left: 90px;
-    background: #0891b2;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.27), transparent 42%),
+        linear-gradient(180deg, #22b8d5 0%, #0891b2 58%, #08758f 100%);
     transform: rotate(12deg);
 }
 
 .block-light {
     top: 145px;
     left: 25px;
-    background: #a78bfa;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.3), transparent 42%),
+        linear-gradient(180deg, #c0adff 0%, #a78bfa 58%, #8d70e3 100%);
     transform: rotate(-5deg);
 }
 
@@ -1305,21 +1327,6 @@ body.sidebar-collapsed .sidebar-link:hover::after {
    ========================================== */
 
 @media (prefers-reduced-motion: no-preference) {
-    .block-purple {
-        animation: brick-float-purple 5s ease-in-out infinite;
-        transform-origin: center;
-    }
-
-    .block-cyan {
-        animation: brick-float-cyan 6s ease-in-out infinite;
-        transform-origin: center;
-    }
-
-    .block-light {
-        animation: brick-float-light 5.5s ease-in-out infinite;
-        transform-origin: center;
-    }
-
     .orbit-one {
         animation: orbit-drift-one 18s linear infinite;
         transform-origin: center;
@@ -1332,45 +1339,6 @@ body.sidebar-collapsed .sidebar-link:hover::after {
 
     .art-glow {
         animation: hero-glow-pulse 5s ease-in-out infinite;
-    }
-
-    .dashboard-welcome:hover .block-purple {
-        animation-duration: 3.5s;
-    }
-
-    .dashboard-welcome:hover .block-cyan {
-        animation-duration: 4s;
-    }
-
-    .dashboard-welcome:hover .block-light {
-        animation-duration: 3.8s;
-    }
-}
-
-@keyframes brick-float-purple {
-    0%, 100% {
-        transform: translate(0, 0) rotate(-14deg);
-    }
-    50% {
-        transform: translate(-5px, -12px) rotate(-10deg);
-    }
-}
-
-@keyframes brick-float-cyan {
-    0%, 100% {
-        transform: translate(0, 0) rotate(12deg);
-    }
-    50% {
-        transform: translate(7px, -9px) rotate(16deg);
-    }
-}
-
-@keyframes brick-float-light {
-    0%, 100% {
-        transform: translate(0, 0) rotate(-5deg);
-    }
-    50% {
-        transform: translate(-7px, -8px) rotate(-9deg);
     }
 }
 
