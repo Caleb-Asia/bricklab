@@ -5,9 +5,7 @@
 !.env.example
 config.local.php
 
-# Local database configuration
-# Uncomment this if config/database.php contains hardcoded credentials
-# config/database.php
+# Keep database credentials in ignored local environment files.
 
 # PHP dependencies
 /vendor/

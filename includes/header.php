@@ -127,6 +127,19 @@ $currentPage = $currentPage ?? 'dashboard';
                     <span>Showcase</span>
                 </a>
 
+                <form class="sidebar-logout-form" method="post" action="/bricklab/logout.php">
+                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
+                    <button class="sidebar-link sidebar-logout" type="submit" aria-label="Sign out">
+                        <span class="nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M10 17l5-5-5-5M15 12H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <span>Sign out</span>
+                    </button>
+                </form>
+
             </nav>
         </div>
 

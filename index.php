@@ -1,5 +1,8 @@
 
 <?php
+require_once __DIR__ . '/includes/auth.php';
+require_authentication();
+
 $pageTitle = 'Dashboard';
 $currentPage = 'dashboard';
 
@@ -21,7 +24,7 @@ require_once __DIR__ . '/includes/header.php';
             building ideas into projects worth showcasing.
         </p>
 
-        <a href="#my-builds" class="btn btn-primary">
+        <a href="/bricklab/projects.php" class="btn btn-primary">
             <span aria-hidden="true">+</span>
             Start your first build
         </a>
@@ -126,7 +129,7 @@ require_once __DIR__ . '/includes/header.php';
             </p>
         </div>
 
-        <a href="#my-builds" class="btn btn-secondary">
+        <a href="/bricklab/projects.php" class="btn btn-secondary">
             + New build
         </a>
     </div>
@@ -145,7 +148,7 @@ require_once __DIR__ . '/includes/header.php';
             Create your first build and start tracking your progress here.
         </p>
 
-        <a href="#my-builds" class="btn btn-primary">
+        <a href="/bricklab/projects.php" class="btn btn-primary">
             Create your first build
         </a>
 
