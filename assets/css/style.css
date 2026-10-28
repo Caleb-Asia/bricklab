@@ -1227,3 +1227,219 @@ body.sidebar-collapsed .sidebar-link:hover::after {
     }
 }
 
+.nav-icon svg,
+.tip-icon svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
+.nav-icon {
+    flex-shrink: 0;
+}
+
+.tip-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+
+/* Smooth desktop sidebar collapse */
+@media (min-width: 801px) {
+    .sidebar {
+        transition: width 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .main-wrapper,
+    .site-footer {
+        transition: margin-left 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .sidebar-brand-row {
+        transition: margin 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .sidebar .brand {
+        transition: gap 220ms ease;
+    }
+
+    .sidebar-link {
+        transition:
+            background 180ms ease,
+            border-color 180ms ease,
+            color 180ms ease,
+            transform 180ms ease,
+            padding 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .sidebar-collapse-toggle {
+        transition:
+            color 180ms ease,
+            border-color 180ms ease,
+            top 320ms cubic-bezier(0.22, 1, 0.36, 1),
+            right 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .nav-icon {
+        transition: color 180ms ease;
+    }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .main-wrapper,
+    .site-footer,
+    .sidebar-brand-row,
+    .sidebar .brand,
+    .sidebar-link,
+    .sidebar-collapse-toggle,
+    .nav-icon {
+        transition: none !important;
+    }
+}
+
+
+/* ==========================================
+   BRICKLAB — CREATIVE HERO ANIMATION
+   ========================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+    .block-purple {
+        animation: brick-float-purple 5s ease-in-out infinite;
+        transform-origin: center;
+    }
+
+    .block-cyan {
+        animation: brick-float-cyan 6s ease-in-out infinite;
+        transform-origin: center;
+    }
+
+    .block-light {
+        animation: brick-float-light 5.5s ease-in-out infinite;
+        transform-origin: center;
+    }
+
+    .orbit-one {
+        animation: orbit-drift-one 18s linear infinite;
+        transform-origin: center;
+    }
+
+    .orbit-two {
+        animation: orbit-drift-two 22s linear infinite;
+        transform-origin: center;
+    }
+
+    .art-glow {
+        animation: hero-glow-pulse 5s ease-in-out infinite;
+    }
+
+    .dashboard-welcome:hover .block-purple {
+        animation-duration: 3.5s;
+    }
+
+    .dashboard-welcome:hover .block-cyan {
+        animation-duration: 4s;
+    }
+
+    .dashboard-welcome:hover .block-light {
+        animation-duration: 3.8s;
+    }
+}
+
+@keyframes brick-float-purple {
+    0%, 100% {
+        transform: translate(0, 0) rotate(-14deg);
+    }
+    50% {
+        transform: translate(-5px, -12px) rotate(-10deg);
+    }
+}
+
+@keyframes brick-float-cyan {
+    0%, 100% {
+        transform: translate(0, 0) rotate(12deg);
+    }
+    50% {
+        transform: translate(7px, -9px) rotate(16deg);
+    }
+}
+
+@keyframes brick-float-light {
+    0%, 100% {
+        transform: translate(0, 0) rotate(-5deg);
+    }
+    50% {
+        transform: translate(-7px, -8px) rotate(-9deg);
+    }
+}
+
+@keyframes orbit-drift-one {
+    from {
+        transform: rotate(-25deg) scaleY(0.55);
+    }
+    to {
+        transform: rotate(335deg) scaleY(0.55);
+    }
+}
+
+@keyframes orbit-drift-two {
+    from {
+        transform: rotate(55deg) scaleY(0.7);
+    }
+    to {
+        transform: rotate(415deg) scaleY(0.7);
+    }
+}
+
+@keyframes hero-glow-pulse {
+    0%, 100% {
+        opacity: 0.65;
+        transform: scale(0.92);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.08);
+    }
+}
+
+
+/* ==========================================
+   BRICKLAB — SITE-WIDE CURSOR GLOW
+   ========================================== */
+
+.cursor-glow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(
+        circle,
+        rgba(167, 139, 250, 0.13) 0%,
+        rgba(34, 211, 238, 0.07) 35%,
+        transparent 70%
+    );
+    filter: blur(12px);
+    transform: translate3d(-50%, -50%, 0);
+    will-change: transform, opacity;
+    transition: opacity 220ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) and
+       (prefers-reduced-motion: no-preference) {
+    body.cursor-glow-active .cursor-glow {
+        opacity: 1;
+    }
+}
+
+@media (hover: none), (pointer: coarse),
+       (prefers-reduced-motion: reduce) {
+    .cursor-glow {
+        display: none;
+    }
+}

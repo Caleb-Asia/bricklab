@@ -1,5 +1,61 @@
 ﻿
 document.addEventListener("DOMContentLoaded", () => {
+    // ==========================================
+    // BRICKLAB — SITE-WIDE CURSOR GLOW
+    // ==========================================
+
+    const cursorGlow = document.querySelector(".cursor-glow");
+
+    const finePointer = window.matchMedia(
+        "(hover: hover) and (pointer: fine)"
+    );
+
+    const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+    );
+
+    if (cursorGlow && finePointer.matches && !reducedMotion.matches) {
+        let targetX = window.innerWidth / 2;
+        let targetY = window.innerHeight / 2;
+
+        let currentX = targetX;
+        let currentY = targetY;
+        let animationFrame = null;
+
+        function updateGlow() {
+            currentX += (targetX - currentX) * 0.16;
+            currentY += (targetY - currentY) * 0.16;
+
+            cursorGlow.style.left = `${currentX}px`;
+            cursorGlow.style.top = `${currentY}px`;
+
+            if (
+                Math.abs(targetX - currentX) > 0.5 ||
+                Math.abs(targetY - currentY) > 0.5
+            ) {
+                animationFrame = requestAnimationFrame(updateGlow);
+            } else {
+                animationFrame = null;
+            }
+        }
+
+        document.addEventListener("pointermove", (event) => {
+            targetX = event.clientX;
+            targetY = event.clientY;
+
+            document.body.classList.add("cursor-glow-active");
+
+            if (animationFrame === null) {
+                animationFrame = requestAnimationFrame(updateGlow);
+            }
+        });
+
+        window.addEventListener("pointerout", (event) => {
+            if (event.relatedTarget === null) {
+                document.body.classList.remove("cursor-glow-active");
+            }
+        });
+    }
     const sidebar = document.getElementById("sidebar");
     const menuToggle = document.getElementById("menu-toggle");
     const backdrop = document.getElementById("sidebar-backdrop");
