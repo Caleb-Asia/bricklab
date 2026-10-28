@@ -59,19 +59,26 @@
                 </ul>
             </div>
 
-            <div class="auth-brick-art" aria-hidden="true">
-                <span class="auth-art-orbit auth-art-orbit-one"></span>
-                <span class="auth-art-orbit auth-art-orbit-two"></span>
-                <span class="auth-brick auth-brick-purple">
-                    <i></i><i></i><i></i><i></i>
-                </span>
-                <span class="auth-brick auth-brick-cyan">
-                    <i></i><i></i><i></i>
-                </span>
-                <span class="auth-brick auth-brick-lavender">
-                    <i></i><i></i>
-                </span>
-                <span class="auth-brick auth-brick-float"></span>
+            <div
+                class="auth-brick-art"
+                data-auth-scene="<?= escape_html($authScene) ?>"
+                aria-hidden="true"
+            >
+                <canvas class="auth-scene-canvas"></canvas>
+                <div class="auth-scene-fallback">
+                    <span class="auth-art-orbit auth-art-orbit-one"></span>
+                    <span class="auth-art-orbit auth-art-orbit-two"></span>
+                    <span class="auth-brick auth-brick-purple">
+                        <i></i><i></i><i></i><i></i>
+                    </span>
+                    <span class="auth-brick auth-brick-cyan">
+                        <i></i><i></i><i></i>
+                    </span>
+                    <span class="auth-brick auth-brick-lavender">
+                        <i></i><i></i>
+                    </span>
+                    <span class="auth-brick auth-brick-float"></span>
+                </div>
             </div>
         </section>
 

@@ -1730,6 +1730,32 @@ body.sidebar-collapsed .sidebar-link {
         linear-gradient(135deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.005));
 }
 
+.auth-scene-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.auth-brick-art[data-scene-ready="true"] .auth-scene-canvas {
+    opacity: 1;
+}
+
+.auth-scene-fallback {
+    position: absolute;
+    inset: 0;
+    opacity: 1;
+}
+
+.auth-brick-art[data-scene-ready="true"] .auth-scene-fallback {
+    opacity: 0;
+    visibility: hidden;
+}
+
 .auth-art-orbit {
     position: absolute;
     left: 50%;
@@ -1780,7 +1806,6 @@ body.sidebar-collapsed .sidebar-link {
     width: 196px;
     background: linear-gradient(150deg, #c0aaff 0%, #9270e8 50%, #684bb6 100%);
     transform: rotate(-8deg);
-    animation: auth-brick-float 5.5s ease-in-out infinite;
 }
 
 .auth-brick-cyan {
@@ -1790,7 +1815,6 @@ body.sidebar-collapsed .sidebar-link {
     height: 49px;
     background: linear-gradient(145deg, #6ce7f3 0%, #22b7d0 54%, #13869e 100%);
     transform: rotate(7deg);
-    animation: auth-brick-float 6.3s ease-in-out -1.4s infinite;
 }
 
 .auth-brick-cyan i {
@@ -1805,7 +1829,6 @@ body.sidebar-collapsed .sidebar-link {
     height: 41px;
     background: linear-gradient(145deg, #e1d5ff 0%, #bca8ee 58%, #9076cd 100%);
     transform: rotate(-3deg);
-    animation: auth-brick-float 5.9s ease-in-out -2.2s infinite;
 }
 
 .auth-brick-lavender i {
@@ -1822,12 +1845,6 @@ body.sidebar-collapsed .sidebar-link {
     border-radius: 7px;
     background: linear-gradient(145deg, #c0aaff, #795bc6);
     transform: rotate(17deg);
-    animation: auth-brick-float 4.8s ease-in-out -0.8s infinite;
-}
-
-@keyframes auth-brick-float {
-    0%, 100% { translate: 0 0; }
-    50% { translate: 0 -8px; }
 }
 
 .auth-card {
@@ -2042,7 +2059,8 @@ body.sidebar-collapsed .sidebar-link {
     }
 
     .auth-brick-art {
-        display: none;
+        height: 190px;
+        margin-top: 20px;
     }
 
     .auth-card {
