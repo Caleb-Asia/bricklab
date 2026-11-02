@@ -1757,6 +1757,136 @@ body.sidebar-collapsed .sidebar-link {
     opacity: 1;
 }
 
+.auth-progress-fallback {
+    overflow: hidden;
+}
+
+.auth-progress-path {
+    position: absolute;
+    top: 48%;
+    right: 17%;
+    left: 17%;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        rgba(167, 139, 250, 0.65),
+        rgba(34, 211, 238, 0.55),
+        rgba(167, 139, 250, 0.65)
+    );
+}
+
+.auth-progress-station {
+    position: absolute;
+    top: 20%;
+    display: grid;
+    width: 30%;
+    height: 66%;
+    place-items: center;
+}
+
+.auth-progress-station-plan {
+    left: 2%;
+    color: #a78bfa;
+}
+
+.auth-progress-station-build {
+    left: 35%;
+    color: #22d3ee;
+}
+
+.auth-progress-station-showcase {
+    right: 2%;
+    color: #a78bfa;
+}
+
+.auth-progress-stack {
+    position: relative;
+    display: block;
+    width: 76px;
+    height: 76px;
+}
+
+.auth-progress-brick {
+    position: absolute;
+    left: 50%;
+    width: 52px;
+    height: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    border-radius: 5px;
+    background: currentColor;
+    box-shadow:
+        inset 0 2px 3px rgba(255, 255, 255, 0.2),
+        inset 0 -4px 0 rgba(0, 0, 0, 0.16),
+        0 8px 16px rgba(0, 0, 0, 0.2);
+    transform: translateX(-50%);
+}
+
+.auth-progress-brick::before,
+.auth-progress-brick::after {
+    position: absolute;
+    top: -4px;
+    width: 10px;
+    height: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    border-radius: 50%;
+    background: rgba(235, 230, 255, 0.72);
+    content: "";
+}
+
+.auth-progress-brick::before {
+    left: 11px;
+}
+
+.auth-progress-brick::after {
+    right: 11px;
+}
+
+.auth-progress-station-plan .auth-progress-brick {
+    bottom: 23px;
+}
+
+.auth-progress-station-build .auth-progress-brick:first-child {
+    bottom: 23px;
+}
+
+.auth-progress-station-build .auth-progress-brick:last-child {
+    bottom: 40px;
+}
+
+.auth-progress-station-showcase .auth-progress-brick:first-child {
+    bottom: 23px;
+}
+
+.auth-progress-station-showcase .auth-progress-brick:nth-child(2) {
+    bottom: 40px;
+}
+
+.auth-progress-station-showcase .auth-progress-brick:last-child {
+    bottom: 57px;
+}
+
+.auth-progress-labels {
+    position: absolute;
+    z-index: 3;
+    right: 5%;
+    bottom: 13px;
+    left: 5%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    color: var(--color-text-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+.auth-brick-art[data-auth-scene="progress"] .auth-scene-canvas {
+    cursor: default;
+    pointer-events: none;
+}
+
 .auth-brick-art[data-scene-ready="true"] .auth-scene-fallback {
     opacity: 0;
     visibility: hidden;

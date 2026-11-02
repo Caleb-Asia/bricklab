@@ -12,7 +12,10 @@
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap"
         rel="stylesheet"
     >
-    <link rel="stylesheet" href="/bricklab/assets/css/style.css">
+    <link
+        rel="stylesheet"
+        href="/bricklab/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>"
+    >
 </head>
 <body class="auth-page">
     <main class="auth-shell">
@@ -65,20 +68,49 @@
                 aria-hidden="true"
             >
                 <canvas class="auth-scene-canvas"></canvas>
-                <div class="auth-scene-fallback">
-                    <span class="auth-art-orbit auth-art-orbit-one"></span>
-                    <span class="auth-art-orbit auth-art-orbit-two"></span>
-                    <span class="auth-brick auth-brick-purple">
-                        <i></i><i></i><i></i><i></i>
-                    </span>
-                    <span class="auth-brick auth-brick-cyan">
-                        <i></i><i></i><i></i>
-                    </span>
-                    <span class="auth-brick auth-brick-lavender">
-                        <i></i><i></i>
-                    </span>
-                    <span class="auth-brick auth-brick-float"></span>
-                </div>
+                <?php if ($authScene === 'progress'): ?>
+                    <div class="auth-scene-fallback auth-progress-fallback">
+                        <span class="auth-progress-path"></span>
+                        <span class="auth-progress-station auth-progress-station-plan">
+                            <span class="auth-progress-stack">
+                                <span class="auth-progress-brick"></span>
+                            </span>
+                        </span>
+                        <span class="auth-progress-station auth-progress-station-build">
+                            <span class="auth-progress-stack">
+                                <span class="auth-progress-brick"></span>
+                                <span class="auth-progress-brick"></span>
+                            </span>
+                        </span>
+                        <span class="auth-progress-station auth-progress-station-showcase">
+                            <span class="auth-progress-stack">
+                                <span class="auth-progress-brick"></span>
+                                <span class="auth-progress-brick"></span>
+                                <span class="auth-progress-brick"></span>
+                            </span>
+                        </span>
+                    </div>
+                    <div class="auth-progress-labels">
+                        <span>Plan</span>
+                        <span>Build</span>
+                        <span>Showcase</span>
+                    </div>
+                <?php else: ?>
+                    <div class="auth-scene-fallback">
+                        <span class="auth-art-orbit auth-art-orbit-one"></span>
+                        <span class="auth-art-orbit auth-art-orbit-two"></span>
+                        <span class="auth-brick auth-brick-purple">
+                            <i></i><i></i><i></i><i></i>
+                        </span>
+                        <span class="auth-brick auth-brick-cyan">
+                            <i></i><i></i><i></i>
+                        </span>
+                        <span class="auth-brick auth-brick-lavender">
+                            <i></i><i></i>
+                        </span>
+                        <span class="auth-brick auth-brick-float"></span>
+                    </div>
+                <?php endif; ?>
             </div>
         </section>
 

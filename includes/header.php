@@ -18,7 +18,10 @@ $currentPage = $currentPage ?? 'dashboard';
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;display=swap"
         rel="stylesheet"
     >
-    <link rel="stylesheet" href="/bricklab/assets/css/style.css">
+    <link
+        rel="stylesheet"
+        href="/bricklab/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>"
+    >
 </head>
 <body>
     

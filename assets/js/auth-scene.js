@@ -317,6 +317,141 @@
         };
     }
 
+    function createProgressScene() {
+        scene = new THREE.Scene();
+        stage = new THREE.Group();
+        stage.position.z = 0.18;
+        scene.add(stage);
+
+        const ambient = new THREE.HemisphereLight(0xdcd5ff, 0x171421, 2.1);
+        const key = new THREE.DirectionalLight(0xffffff, 3);
+        key.position.set(-3.5, -4, 7);
+        const fill = new THREE.PointLight(0x79dff2, 3.2, 8);
+        fill.position.set(1.8, 1.4, 2.4);
+        scene.add(ambient, key, fill);
+
+        const pathGeometry = trackGeometry(
+            new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-1.6, 0, 0.015),
+                new THREE.Vector3(1.6, 0, 0.015),
+            ])
+        );
+        const pathMaterial = trackMaterial(new THREE.LineBasicMaterial({
+            color: 0x59607c,
+            transparent: true,
+            opacity: 0.66,
+        }));
+        stage.add(new THREE.Line(pathGeometry, pathMaterial));
+
+        const brickGeometry = roundedBrickGeometry(0.56, 0.34, 0.22);
+        const studGeometry = trackGeometry(
+            new THREE.CylinderGeometry(0.09, 0.105, 0.1, 16, 1)
+        );
+        studGeometry.rotateX(Math.PI / 2);
+
+        const definitions = [
+            { x: -1.55, color: 0xa78bfa, count: 1 },
+            { x: 0, color: 0x22d3ee, count: 2 },
+            { x: 1.55, color: 0x8b5cf6, count: 3 },
+        ];
+        const stations = definitions.map((definition, stationIndex) => {
+            const padMaterial = trackMaterial(new THREE.MeshPhysicalMaterial({
+                color: 0x24243a,
+                roughness: 0.55,
+                metalness: 0.08,
+                clearcoat: 0.3,
+            }));
+            const padGeometry = trackGeometry(
+                new THREE.CylinderGeometry(0.43, 0.46, 0.06, 40)
+            );
+            padGeometry.rotateX(Math.PI / 2);
+            const pad = new THREE.Mesh(
+                padGeometry,
+                padMaterial
+            );
+            pad.position.set(definition.x, 0, 0.015);
+            stage.add(pad);
+
+            const ringMaterial = trackMaterial(new THREE.MeshBasicMaterial({
+                color: definition.color,
+                transparent: true,
+                opacity: 0.18,
+            }));
+            const ring = new THREE.Mesh(
+                trackGeometry(new THREE.TorusGeometry(0.36, 0.014, 8, 40)),
+                ringMaterial
+            );
+            ring.position.set(definition.x, 0, 0.05);
+            stage.add(ring);
+
+            const bricks = Array.from({ length: definition.count }, (_, layer) => {
+                const brick = makeBrick({
+                    color: definition.color,
+                    index: stationIndex * 3 + layer,
+                    phase: stationIndex * 0.8 + layer * 0.35,
+                    position: [definition.x, 0, layer * 0.22],
+                }, stationIndex * 3 + layer, {
+                    geometry: brickGeometry,
+                    studGeometry,
+                    studHeight: 0.25,
+                });
+                const data = brick.userData.brick;
+                data.motion = brick.children[0];
+                data.root = brick;
+                data.targetPosition = new THREE.Vector3(
+                    definition.x,
+                    0,
+                    layer * 0.22
+                );
+                data.startPosition = data.targetPosition.clone().add(
+                    new THREE.Vector3(0, 0.55, 0.7 + layer * 0.08)
+                );
+                data.stationIndex = stationIndex;
+                data.layer = layer;
+                brick.rotation.z = 0;
+                return data;
+            });
+
+            return { ring, ringMaterial, bricks };
+        });
+
+        updateScene = (time, pointer, staticFrame, delta) => {
+            stage.rotation.x += (pointer.y * 0.025 - stage.rotation.x) * 0.055;
+            stage.rotation.y += (pointer.x * 0.035 - stage.rotation.y) * 0.055;
+            key.intensity = 2.95 + Math.sin(time * 0.5) * 0.1;
+
+            stations.forEach((station, stationIndex) => {
+                const stationStart = stationIndex * 1.05;
+                const stationProgress = staticFrame
+                    ? 1
+                    : smoothstep(0, 1, (time - stationStart - 0.35) / 0.9);
+                station.ringMaterial.opacity = 0.15 + stationProgress * 0.38;
+                station.ring.scale.setScalar(0.9 + stationProgress * 0.1);
+
+                station.bricks.forEach((brick) => {
+                    const entry = staticFrame
+                        ? 1
+                        : smoothstep(
+                            0,
+                            1,
+                            (time - stationStart - brick.layer * 0.14) / 0.9
+                        );
+                    brick.root.position.lerpVectors(
+                        brick.startPosition,
+                        brick.targetPosition,
+                        entry
+                    );
+                    brick.root.position.z += staticFrame
+                        ? 0
+                        : Math.sin(time * 0.72 + brick.index * 0.8) * 0.01;
+                    brick.motion.rotation.set(0, 0, 0);
+                    brick.root.rotation.z = 0;
+                    updateHover(brick, delta, staticFrame);
+                });
+            });
+        };
+    }
+
     function createBlueprintScene() {
         scene = new THREE.Scene();
         stage = new THREE.Group();
@@ -764,7 +899,7 @@
             !("WebGLRenderingContext" in window) ||
             !("IntersectionObserver" in window) ||
             !("ResizeObserver" in window) ||
-            !["workshop", "blueprint"].includes(sceneType)
+            !["workshop", "blueprint", "progress"].includes(sceneType)
         ) {
             return;
         }
@@ -800,6 +935,8 @@
 
             if (sceneType === "workshop") {
                 createWorkshopScene();
+            } else if (sceneType === "progress") {
+                createProgressScene();
             } else {
                 createBlueprintScene();
             }
