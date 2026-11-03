@@ -41,6 +41,15 @@ document.addEventListener("DOMContentLoaded", () => {
         "(prefers-reduced-motion: reduce)"
     );
 
+    if (
+        !reducedMotion.matches &&
+        (typeof document.startViewTransition !== "function" ||
+            typeof CSS === "undefined" ||
+            !CSS.supports("selector(::view-transition-new(root))"))
+    ) {
+        document.documentElement.classList.add("page-transition-fallback");
+    }
+
     if (cursorGlow && finePointer.matches && !reducedMotion.matches) {
         let targetX = window.innerWidth / 2;
         let targetY = window.innerHeight / 2;
