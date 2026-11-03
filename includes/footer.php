@@ -21,6 +21,11 @@
         src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"
         defer
     ></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
+        defer
+    ></script>
+    <script src="/bricklab/assets/js/dashboard-charts.js" defer></script>
 <?php endif; ?>
 <script src="/bricklab/assets/js/app.js" defer></script>
 </body>
