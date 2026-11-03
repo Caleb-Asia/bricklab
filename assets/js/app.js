@@ -4,6 +4,29 @@ document.addEventListener("DOMContentLoaded", () => {
         window.lucide.createIcons();
     }
 
+    document.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
+        const passwordId = toggle.getAttribute("aria-controls");
+        const passwordInput = passwordId
+            ? document.getElementById(passwordId)
+            : null;
+
+        if (!(passwordInput instanceof HTMLInputElement)) {
+            console.error("BrickLab password toggle is missing its input.");
+            return;
+        }
+
+        toggle.addEventListener("click", () => {
+            const isVisible = passwordInput.type === "password";
+            passwordInput.type = isVisible ? "text" : "password";
+            toggle.setAttribute("aria-pressed", String(isVisible));
+            toggle.setAttribute(
+                "aria-label",
+                isVisible ? "Hide password" : "Show password"
+            );
+            toggle.textContent = isVisible ? "Hide" : "Show";
+        });
+    });
+
     // ==========================================
     // BRICKLAB — SITE-WIDE CURSOR GLOW
     // ==========================================
@@ -90,42 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebar = document.getElementById("sidebar");
     const menuToggle = document.getElementById("menu-toggle");
     const backdrop = document.getElementById("sidebar-backdrop");
-    const collapseToggle = document.getElementById(
-        "sidebar-collapse-toggle"
-    );
-
-    // Desktop sidebar collapse
-    if (sidebar && collapseToggle) {
-        collapseToggle.addEventListener("click", () => {
-            const isCollapsed =
-                document.body.classList.toggle("sidebar-collapsed");
-
-            collapseToggle.setAttribute(
-                "aria-expanded",
-                String(!isCollapsed)
-            );
-
-            collapseToggle.setAttribute(
-                "aria-label",
-                isCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            );
-
-            collapseToggle.title = isCollapsed
-                ? "Expand sidebar"
-                : "Collapse sidebar";
-
-            collapseToggle.querySelector("span").textContent =
-                isCollapsed ? "\u00BB" : "\u00AB";
-        });
-
-        sidebar.querySelectorAll(".sidebar-link").forEach((link) => {
-            const label = link.querySelector("span:last-child");
-
-            if (label) {
-                link.setAttribute("aria-label", label.textContent.trim());
-            }
-        });
-    }
 
     // Mobile sidebar
     if (!sidebar || !menuToggle || !backdrop) {

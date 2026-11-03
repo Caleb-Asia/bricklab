@@ -39,17 +39,6 @@ $currentPage = $currentPage ?? 'dashboard';
                     Brick<span class="brand-accent">Lab</span>
                 </span>
             </a>
-
-            <button
-                class="sidebar-collapse-toggle"
-                id="sidebar-collapse-toggle"
-                type="button"
-                aria-label="Collapse sidebar"
-                aria-expanded="true"
-                title="Collapse sidebar"
-            >
-                <span aria-hidden="true">&laquo;</span>
-            </button>
         </div>
 
         <div class="sidebar-section">

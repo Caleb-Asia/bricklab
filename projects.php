@@ -341,6 +341,7 @@ require __DIR__ . '/includes/header.php';
                             name="title"
                             type="text"
                             maxlength="100"
+                            placeholder="e.g. Medieval castle"
                             value="<?= escape_html($formValues['title']) ?>"
                             aria-invalid="<?= in_array('Enter a project title.', $errors, true) ? 'true' : 'false' ?>"
                             required
@@ -350,8 +351,9 @@ require __DIR__ . '/includes/header.php';
                         <textarea
                             id="project-description"
                             name="description"
-                            rows="4"
+                            rows="3"
                             maxlength="5000"
+                            placeholder="Add a goal or a few notes about your build."
                         ><?= escape_html($formValues['description']) ?></textarea>
 
                         <label for="project-status">Status</label>

@@ -108,24 +108,44 @@ require __DIR__ . '/includes/auth-header.php';
                 >
 
                 <label for="password">Password</label>
-                <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autocomplete="new-password"
-                    minlength="12"
-                    required
-                >
+                <div class="auth-password-field">
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        autocomplete="new-password"
+                        minlength="12"
+                        required
+                    >
+                    <button
+                        class="auth-password-toggle"
+                        type="button"
+                        aria-controls="password"
+                        aria-label="Show password"
+                        aria-pressed="false"
+                        data-password-toggle
+                    >Show</button>
+                </div>
 
                 <label for="password_confirmation">Confirm password</label>
-                <input
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    type="password"
-                    autocomplete="new-password"
-                    minlength="12"
-                    required
-                >
+                <div class="auth-password-field">
+                    <input
+                        id="password_confirmation"
+                        name="password_confirmation"
+                        type="password"
+                        autocomplete="new-password"
+                        minlength="12"
+                        required
+                    >
+                    <button
+                        class="auth-password-toggle"
+                        type="button"
+                        aria-controls="password_confirmation"
+                        aria-label="Show password"
+                        aria-pressed="false"
+                        data-password-toggle
+                    >Show</button>
+                </div>
 
                 <button class="btn btn-primary" type="submit">Create account</button>
             </form>

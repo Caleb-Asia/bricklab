@@ -68,8 +68,11 @@ require __DIR__ . '/includes/auth-header.php';
             <?php endif; ?>
 
             <?php if (isset($_GET['logged_out'])): ?>
-                <p class="form-notice form-notice-success" role="status">
-                    You have been signed out.
+                <p class="form-notice form-notice-success auth-success-notice" role="status">
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="m4 10 4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>You have been signed out.</span>
                 </p>
             <?php endif; ?>
 
@@ -88,13 +91,23 @@ require __DIR__ . '/includes/auth-header.php';
                 >
 
                 <label for="password">Password</label>
-                <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autocomplete="current-password"
-                    required
-                >
+                <div class="auth-password-field">
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        autocomplete="current-password"
+                        required
+                    >
+                    <button
+                        class="auth-password-toggle"
+                        type="button"
+                        aria-controls="password"
+                        aria-label="Show password"
+                        aria-pressed="false"
+                        data-password-toggle
+                    >Show</button>
+                </div>
 
                 <button class="btn btn-primary" type="submit">Sign in</button>
             </form>
