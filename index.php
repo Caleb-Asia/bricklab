@@ -15,7 +15,7 @@ $dashboardStatusOptions = [
 $dashboardStats = null;
 $dashboardTaskStats = null;
 $dashboardProjects = [];
-$dashboardHistory = [];
+$dashboardTaskHistory = [];
 $dashboardChartData = [
     'buildActivity' => [
         'weekly' => ['labels' => [], 'values' => []],
@@ -210,24 +210,64 @@ try {
         );
         $statement->execute(['user_id' => $userId]);
         $dashboardProjects = $statement->fetchAll();
-
-        $statement = $pdo->prepare(
-            'SELECT id, title, status, updated_at
-            FROM projects
-            WHERE user_id = :user_id
-            ORDER BY updated_at DESC, id DESC
-            LIMIT 4'
-        );
-        $statement->execute(['user_id' => $userId]);
-        $dashboardHistory = $statement->fetchAll();
     }
+
+    $statement = $pdo->prepare(
+        'SELECT
+            task_activity.task_id,
+            task_activity.project_id,
+            task_activity.task_title,
+            task_activity.project_title,
+            task_activity.activity_type,
+            task_activity.activity_at
+        FROM (
+            SELECT
+                task.id AS task_id,
+                project.id AS project_id,
+                task.title AS task_title,
+                project.title AS project_title,
+                \'created\' AS activity_type,
+                task.created_at AS activity_at
+            FROM tasks AS task
+            INNER JOIN projects AS project ON project.id = task.project_id
+            WHERE project.user_id = :created_user_id
+
+            UNION ALL
+
+            SELECT
+                task.id AS task_id,
+                project.id AS project_id,
+                task.title AS task_title,
+                project.title AS project_title,
+                \'completed\' AS activity_type,
+                task.completed_at AS activity_at
+            FROM tasks AS task
+            INNER JOIN projects AS project ON project.id = task.project_id
+            WHERE project.user_id = :completed_user_id
+                AND task.status = \'completed\'
+                AND task.completed_at IS NOT NULL
+        ) AS task_activity
+        ORDER BY
+            task_activity.activity_at DESC,
+            CASE task_activity.activity_type
+                WHEN \'completed\' THEN 0
+                ELSE 1
+            END,
+            task_activity.task_id DESC
+        LIMIT 10'
+    );
+    $statement->execute([
+        'created_user_id' => $userId,
+        'completed_user_id' => $userId,
+    ]);
+    $dashboardTaskHistory = $statement->fetchAll();
 } catch (PDOException $exception) {
     error_log('BrickLab dashboard data could not be loaded: ' . $exception->getMessage());
     http_response_code(500);
     $dashboardStats = null;
     $dashboardTaskStats = null;
     $dashboardChartData = null;
-    $dashboardHistory = [];
+    $dashboardTaskHistory = [];
     $dashboardError = 'Your dashboard data could not be loaded right now. Please try again later.';
 }
 
@@ -493,53 +533,57 @@ require_once __DIR__ . '/includes/header.php';
     <?php endif; ?>
 </section>
 
-<?php if ($dashboardHistory !== []): ?>
-<section class="dashboard-section development-history" aria-labelledby="development-history-title">
+<?php if ($dashboardError === ''): ?>
+<section class="dashboard-section task-history" id="task-history" aria-labelledby="task-history-title">
     <div class="section-heading">
         <div>
             <p class="section-kicker">RECENT ACTIVITY</p>
-            <h2 id="development-history-title">Development history</h2>
-            <p class="section-subtitle">Your four most recently updated builds.</p>
+            <h2 id="task-history-title">Task History</h2>
+            <p class="section-subtitle">Recent task activity across your builds.</p>
         </div>
+        <a href="/bricklab/tasks.php" class="step-link task-history-link">View All</a>
     </div>
 
-    <div class="development-history-list surface">
-        <?php foreach ($dashboardHistory as $historyItem): ?>
+    <?php if ($dashboardTaskHistory !== []): ?>
+    <div class="task-history-list surface">
+        <?php foreach ($dashboardTaskHistory as $historyItem): ?>
             <?php
-            $historyStatus = (string) ($historyItem['status'] ?? '');
-            $historyStatusClass = array_key_exists($historyStatus, $dashboardStatusOptions)
-                ? $historyStatus
-                : 'unknown';
-            $historyStatusLabel = $dashboardStatusOptions[$historyStatus]
-                ?? 'Status unavailable';
-            $updatedTimestamp = strtotime((string) $historyItem['updated_at']);
+            $activityType = (string) $historyItem['activity_type'];
+            $activityTimestamp = strtotime((string) $historyItem['activity_at']);
+            $activityLabel = $activityType === 'completed' ? 'Task completed' : 'Task created';
             ?>
-            <article class="development-history-item">
-                <span class="development-history-marker" aria-hidden="true"></span>
-                <div class="development-history-details">
-                    <h3><?= escape_html((string) $historyItem['title']) ?></h3>
-                    <span class="project-status status-<?= escape_html($historyStatusClass) ?>">
-                        <?= escape_html($historyStatusLabel) ?>
-                    </span>
+            <article class="task-history-item">
+                <span
+                    class="task-history-marker task-history-marker-<?= escape_html($activityType) ?>"
+                    aria-hidden="true"
+                ></span>
+                <div class="task-history-details">
+                    <h3><?= escape_html((string) $historyItem['task_title']) ?></h3>
+                    <p><?= escape_html((string) $historyItem['project_title']) ?></p>
                 </div>
+                <span class="task-history-type task-history-type-<?= escape_html($activityType) ?>">
+                    <?= escape_html($activityLabel) ?>
+                </span>
                 <time
-                    class="development-history-date"
-                    datetime="<?= escape_html((string) $historyItem['updated_at']) ?>"
+                    class="task-history-date"
+                    datetime="<?= escape_html((string) $historyItem['activity_at']) ?>"
                 >
-                    <?= $updatedTimestamp === false
-                        ? 'Update date unavailable'
-                        : 'Updated ' . escape_html(date('M j, Y', $updatedTimestamp)) ?>
+                    <?= $activityTimestamp === false
+                        ? 'Date unavailable'
+                        : escape_html(date('M j, Y, g:i A', $activityTimestamp)) ?>
                 </time>
-                <a
-                    class="step-link development-history-link"
-                    href="/bricklab/projects.php?edit=<?= (int) $historyItem['id'] ?>"
-                    aria-label="Edit <?= escape_html((string) $historyItem['title']) ?>"
-                >
-                    View build
-                </a>
             </article>
         <?php endforeach; ?>
     </div>
+    <?php else: ?>
+    <div class="task-history-empty surface">
+        <span class="task-history-empty-icon" aria-hidden="true">
+            <i data-lucide="list-checks">•</i>
+        </span>
+        <h3>No task activity yet</h3>
+        <p>Create a task in one of your builds to see its activity here.</p>
+    </div>
+    <?php endif; ?>
 </section>
 <?php endif; ?>
 
