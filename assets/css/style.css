@@ -2549,6 +2549,21 @@ html.page-transition-fallback .auth-shell {
     background: var(--color-surface);
 }
 
+.task-filters [hidden] {
+    display: none !important;
+}
+
+.task-filters .task-filter-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.task-filters.is-enhanced button[type="submit"] {
+    display: none;
+}
+
 .task-filters > div {
     display: grid;
     min-width: 0;
@@ -2569,6 +2584,50 @@ html.page-transition-fallback .auth-shell {
 
 .task-filters .btn {
     min-height: 42px;
+}
+
+.task-filter-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.task-results {
+    position: relative;
+}
+
+.task-results.is-loading {
+    opacity: 0.62;
+}
+
+.task-results.is-loading::after {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 20px;
+    height: 20px;
+    border: 2px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    content: "";
+    pointer-events: none;
+    animation: task-results-loading 700ms linear infinite;
+}
+
+@keyframes task-results-loading {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .task-results.is-loading::after {
+        animation: none;
+    }
 }
 
 .task-list {

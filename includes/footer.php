@@ -27,6 +27,9 @@
     ></script>
     <script src="/bricklab/assets/js/dashboard-charts.js" defer></script>
 <?php endif; ?>
-<script src="/bricklab/assets/js/app.js" defer></script>
+<script
+    src="/bricklab/assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>"
+    defer
+></script>
 </body>
 </html>

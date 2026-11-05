@@ -27,6 +27,170 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    const taskFilters = document.querySelector("[data-task-filters]");
+
+    if (taskFilters instanceof HTMLFormElement) {
+        const filterStatus = document.querySelector("[data-task-filter-status]");
+        let activeRequest = null;
+
+        function selectedFilterUrl() {
+            const url = new URL(taskFilters.action, window.location.href);
+
+            for (const [name, value] of new FormData(taskFilters).entries()) {
+                if (value !== "" && value !== "all") {
+                    url.searchParams.set(name, value);
+                }
+            }
+
+            return url;
+        }
+
+        function updateClearLinks() {
+            const hasActiveFilters = [...new FormData(taskFilters).values()]
+                .some((value) => value !== "" && value !== "all");
+
+            document.querySelectorAll("[data-task-filter-clear]").forEach((link) => {
+                link.hidden = !hasActiveFilters;
+            });
+        }
+
+        function restoreFiltersFromUrl() {
+            const params = new URL(window.location.href).searchParams;
+
+            for (const select of taskFilters.querySelectorAll("select")) {
+                const value = params.get(select.name) ?? "";
+                const hasOption = [...select.options].some((option) => option.value === value);
+                select.value = hasOption ? value : (select.name === "project_id" ? "" : "all");
+            }
+
+            updateClearLinks();
+        }
+
+        async function updateTaskResults(addHistoryEntry) {
+            const url = selectedFilterUrl();
+
+            if (addHistoryEntry && url.href !== window.location.href) {
+                window.history.pushState({}, "", url);
+            }
+
+            if (activeRequest) {
+                activeRequest.abort();
+            }
+
+            const controller = new AbortController();
+            activeRequest = controller;
+            const results = document.querySelector("[data-task-results]");
+
+            if (!results) {
+                console.error("BrickLab task results container is missing.");
+                return;
+            }
+
+            results.classList.add("is-loading");
+            results.setAttribute("aria-busy", "true");
+
+            if (filterStatus) {
+                filterStatus.textContent = "Updating tasks…";
+            }
+
+            try {
+                const requestUrl = new URL(url);
+                requestUrl.searchParams.set("task_results", "1");
+
+                const response = await fetch(requestUrl, {
+                    headers: {
+                        Accept: "text/html",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    signal: controller.signal,
+                });
+
+                if (response.redirected && new URL(response.url).pathname.endsWith("/login.php")) {
+                    window.location.assign(response.url);
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Task results request failed (${response.status}).`);
+                }
+
+                const responseText = await response.text();
+                const responseDocument = new DOMParser().parseFromString(
+                    responseText,
+                    "text/html"
+                );
+                const newResults = responseDocument.querySelector("[data-task-results]");
+
+                if (!newResults) {
+                    throw new Error("Task results response did not contain the results section.");
+                }
+
+                results.replaceWith(document.importNode(newResults, true));
+
+                if (filterStatus) {
+                    const taskCount = document.querySelectorAll(
+                        "[data-task-results] .task-card"
+                    ).length;
+                    filterStatus.textContent = `${taskCount} ${taskCount === 1 ? "task" : "tasks"} shown.`;
+                }
+            } catch (error) {
+                if (error.name === "AbortError") {
+                    return;
+                }
+
+                console.error("BrickLab task filters could not be applied.", error);
+                if (filterStatus) {
+                    filterStatus.textContent = "Tasks could not be updated. Please try again.";
+                }
+            } finally {
+                if (activeRequest === controller) {
+                    activeRequest = null;
+                    const currentResults = document.querySelector("[data-task-results]");
+                    currentResults?.classList.remove("is-loading");
+                    currentResults?.removeAttribute("aria-busy");
+                }
+            }
+        }
+
+        taskFilters.classList.add("is-enhanced");
+        taskFilters.querySelector('button[type="submit"]').hidden = true;
+        updateClearLinks();
+
+        taskFilters.addEventListener("change", (event) => {
+            if (event.target instanceof HTMLSelectElement) {
+                updateClearLinks();
+                updateTaskResults(true);
+            }
+        });
+
+        taskFilters.addEventListener("submit", (event) => {
+            event.preventDefault();
+            updateTaskResults(true);
+        });
+
+        document.addEventListener("click", (event) => {
+            const clearLink = event.target instanceof Element
+                ? event.target.closest("[data-task-filter-clear]")
+                : null;
+
+            if (!clearLink) {
+                return;
+            }
+
+            event.preventDefault();
+            taskFilters.querySelector('[name="status"]').value = "all";
+            taskFilters.querySelector('[name="project_id"]').value = "";
+            taskFilters.querySelector('[name="priority"]').value = "all";
+            updateClearLinks();
+            updateTaskResults(true);
+        });
+
+        window.addEventListener("popstate", () => {
+            restoreFiltersFromUrl();
+            updateTaskResults(false);
+        });
+    }
+
     // ==========================================
     // BRICKLAB — SITE-WIDE CURSOR GLOW
     // ==========================================
