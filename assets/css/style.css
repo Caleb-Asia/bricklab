@@ -415,6 +415,10 @@ html.page-transition-fallback .auth-shell {
     gap: 12px;
 }
 
+.sidebar-section + .sidebar-section {
+    margin-top: 22px;
+}
+
 .sidebar-label {
     margin: 0 0 4px 12px;
     color: var(--color-text-muted);
@@ -2638,11 +2642,6 @@ html.page-transition-fallback .auth-shell {
 
 .public-app-layout {
     min-height: 100vh;
-}
-
-.public-sidebar-bottom {
-    display: grid;
-    gap: 7px;
 }
 
 .public-sidebar-join {
