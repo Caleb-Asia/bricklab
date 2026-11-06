@@ -29,3 +29,7 @@ Desktop.ini
 # Local test and debug files
 test-connection.php
 debug.php
+
+# User-uploaded profile images
+/uploads/avatars/*
+!/uploads/avatars/.htaccess

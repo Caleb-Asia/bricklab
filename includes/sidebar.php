@@ -14,14 +14,12 @@ $navigationItems = $isSignedIn
         'COMMUNITY' => [
             'showcase' => ['Showcase', '/bricklab/showcase.php', 'showcase'],
             'developers' => ['Developers', '/bricklab/developers.php', 'developers'],
-            'about' => ['About', '/bricklab/about.php', 'about'],
         ],
     ]
     : [
         'COMMUNITY' => [
             'showcase' => ['Showcase', '/bricklab/showcase.php', 'showcase'],
             'developers' => ['Developers', '/bricklab/developers.php', 'developers'],
-            'about' => ['About', '/bricklab/about.php', 'about'],
         ],
     ];
 
@@ -31,7 +29,6 @@ $navigationIcons = [
     'tasks' => '<rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="m8 12 2.5 2.5L16 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
     'showcase' => '<rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
     'developers' => '<circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M3 20v-1.5A4.5 4.5 0 0 1 7.5 14h3A4.5 4.5 0 0 1 15 18.5V20M16 4.8a3.5 3.5 0 0 1 0 6.4M17 14.2a4.5 4.5 0 0 1 4 4.3V20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-    'about' => '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5m0-8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
     'profile' => '<circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
     'sign-in' => '<path d="M10 17l5-5-5-5m5 5H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
 ];
@@ -76,15 +73,6 @@ $navigationIcons = [
                 </span>
                 <span>Profile settings</span>
             </a>
-            <form class="sidebar-logout-form" method="post" action="/bricklab/logout.php">
-                <input type="hidden" name="_csrf" value="<?= escape_html(csrf_token()) ?>">
-                <button class="sidebar-link sidebar-logout" type="submit" aria-label="Sign out">
-                    <span class="nav-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none"><?= $navigationIcons['sign-in'] ?></svg>
-                    </span>
-                    <span>Sign out</span>
-                </button>
-            </form>
         <?php else: ?>
             <a class="sidebar-link" href="/bricklab/login.php">
                 <span class="nav-icon" aria-hidden="true">
