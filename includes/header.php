@@ -136,6 +136,22 @@ $currentPage = $currentPage ?? 'dashboard';
         </div>
 
         <div class="sidebar-bottom">
+            <a
+                href="/bricklab/profile-settings.php"
+                class="sidebar-link <?= $currentPage === 'profile' ? 'active' : '' ?>"
+                <?= $currentPage === 'profile' ? 'aria-current="page"' : '' ?>
+            >
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="8" r="3.5"
+                            stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M4.5 21a7.5 7.5 0 0 1 15 0"
+                            stroke="currentColor" stroke-width="1.8"
+                            stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span>Profile settings</span>
+            </a>
             <div class="sidebar-tip">
                 <span class="tip-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">

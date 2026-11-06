@@ -3,6 +3,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_authentication();
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/showcase.php';
 
 $pageTitle = 'My Builds';
 $currentPage = 'projects';
@@ -12,6 +13,7 @@ $statusOptions = [
     'in_progress' => 'In progress',
     'completed' => 'Completed',
 ];
+$categoryOptions = showcase_category_options();
 $errors = [];
 $pageError = '';
 $databaseError = '';
@@ -23,6 +25,11 @@ $formValues = [
     'title' => '',
     'description' => '',
     'status' => 'planning',
+    'category' => 'other',
+    'technologies' => '',
+    'github_url' => '',
+    'live_demo_url' => '',
+    'is_public' => '0',
 ];
 
 function project_text_length(string $value): ?int
@@ -35,7 +42,18 @@ function project_text_length(string $value): ?int
 function fetch_owned_project(PDO $pdo, int $projectId, int $userId): array|false
 {
     $statement = $pdo->prepare(
-        'SELECT id, title, description, status, created_at, updated_at
+        'SELECT
+            id,
+            title,
+            description,
+            status,
+            category,
+            technologies,
+            github_url,
+            live_demo_url,
+            is_public,
+            created_at,
+            updated_at
         FROM projects
         WHERE id = :id AND user_id = :user_id
         LIMIT 1'
@@ -59,6 +77,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             'title' => trim(request_string($_POST['title'] ?? null)),
             'description' => trim(request_string($_POST['description'] ?? null)),
             'status' => request_string($_POST['status'] ?? null),
+            'category' => request_string($_POST['category'] ?? null),
+            'technologies' => trim(request_string($_POST['technologies'] ?? null)),
+            'github_url' => trim(request_string($_POST['github_url'] ?? null)),
+            'live_demo_url' => trim(request_string($_POST['live_demo_url'] ?? null)),
+            'is_public' => ($_POST['is_public'] ?? null) === '1' ? '1' : '0',
         ];
 
         $titleLength = project_text_length($formValues['title']);
@@ -77,6 +100,31 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         if (!array_key_exists($formValues['status'], $statusOptions)) {
             $errors[] = 'Choose a valid project status.';
         }
+        if (!array_key_exists($formValues['category'], $categoryOptions)) {
+            $errors[] = 'Choose a valid project category.';
+        }
+        $technologiesValid = true;
+        if (strlen($formValues['technologies']) > 1000) {
+            $errors[] = 'Technologies must be 1,000 characters or fewer.';
+            $technologiesValid = false;
+        } elseif (
+            $formValues['technologies'] !== ''
+            && !preg_match(
+                '/\A[A-Za-z0-9][A-Za-z0-9 .+#-]*(?:\s*,\s*[A-Za-z0-9][A-Za-z0-9 .+#-]*)*\z/',
+                $formValues['technologies']
+            )
+        ) {
+            $errors[] = 'Enter technologies as comma-separated tags using letters, numbers, spaces, . + # or -.';
+            $technologiesValid = false;
+        }
+        if ($technologiesValid) {
+            $formValues['technologies'] = showcase_normalize_tags($formValues['technologies']);
+        }
+        foreach (['github_url', 'live_demo_url'] as $urlField) {
+            if (!showcase_url_is_valid($formValues[$urlField])) {
+                $errors[] = ucfirst(str_replace('_', ' ', $urlField)) . ' must be a valid HTTPS URL.';
+            }
+        }
 
         $postedProjectId = null;
         if ($action === 'update') {
@@ -93,14 +141,45 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             try {
                 if ($action === 'create') {
                     $statement = $pdo->prepare(
-                        'INSERT INTO projects (user_id, title, description, status)
-                        VALUES (:user_id, :title, :description, :status)'
+                        'INSERT INTO projects (
+                            user_id,
+                            title,
+                            description,
+                            status,
+                            category,
+                            technologies,
+                            github_url,
+                            live_demo_url,
+                            is_public
+                        )
+                        VALUES (
+                            :user_id,
+                            :title,
+                            :description,
+                            :status,
+                            :category,
+                            :technologies,
+                            :github_url,
+                            :live_demo_url,
+                            :is_public
+                        )'
                     );
                     $statement->execute([
                         'user_id' => $userId,
                         'title' => $formValues['title'],
                         'description' => $formValues['description'],
                         'status' => $formValues['status'],
+                        'category' => $formValues['category'],
+                        'technologies' => $formValues['technologies'] === ''
+                            ? null
+                            : $formValues['technologies'],
+                        'github_url' => $formValues['github_url'] === ''
+                            ? null
+                            : $formValues['github_url'],
+                        'live_demo_url' => $formValues['live_demo_url'] === ''
+                            ? null
+                            : $formValues['live_demo_url'],
+                        'is_public' => $formValues['is_public'],
                     ]);
 
                     set_flash_message('success', 'Your build has been created.');
@@ -113,13 +192,32 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     } else {
                         $statement = $pdo->prepare(
                             'UPDATE projects
-                            SET title = :title, description = :description, status = :status
+                            SET
+                                title = :title,
+                                description = :description,
+                                status = :status,
+                                category = :category,
+                                technologies = :technologies,
+                                github_url = :github_url,
+                                live_demo_url = :live_demo_url,
+                                is_public = :is_public
                             WHERE id = :id AND user_id = :user_id'
                         );
                         $statement->execute([
                             'title' => $formValues['title'],
                             'description' => $formValues['description'],
                             'status' => $formValues['status'],
+                            'category' => $formValues['category'],
+                            'technologies' => $formValues['technologies'] === ''
+                                ? null
+                                : $formValues['technologies'],
+                            'github_url' => $formValues['github_url'] === ''
+                                ? null
+                                : $formValues['github_url'],
+                            'live_demo_url' => $formValues['live_demo_url'] === ''
+                                ? null
+                                : $formValues['live_demo_url'],
+                            'is_public' => $formValues['is_public'],
                             'id' => $postedProjectId,
                             'user_id' => $userId,
                         ]);
@@ -207,6 +305,11 @@ if ($editId !== null) {
                 'title' => (string) $editProject['title'],
                 'description' => (string) ($editProject['description'] ?? ''),
                 'status' => (string) ($editProject['status'] ?? 'planning'),
+                'category' => (string) ($editProject['category'] ?? 'other'),
+                'technologies' => (string) ($editProject['technologies'] ?? ''),
+                'github_url' => (string) ($editProject['github_url'] ?? ''),
+                'live_demo_url' => (string) ($editProject['live_demo_url'] ?? ''),
+                'is_public' => (int) ($editProject['is_public'] ?? 0) === 1 ? '1' : '0',
             ];
         }
     } catch (PDOException $exception) {
@@ -234,7 +337,7 @@ if ($confirmDeleteId !== null) {
 $projects = [];
 try {
     $statement = $pdo->prepare(
-        'SELECT id, title, description, status, created_at
+        'SELECT id, title, description, status, is_public, created_at
         FROM projects
         WHERE user_id = :user_id
         ORDER BY created_at DESC, id DESC'
@@ -356,6 +459,65 @@ require __DIR__ . '/includes/header.php';
                             placeholder="Add a goal or a few notes about your build."
                         ><?= escape_html($formValues['description']) ?></textarea>
 
+                        <div class="project-showcase-fields">
+                            <p class="project-showcase-heading">Showcase details</p>
+                            <label for="project-category">Category</label>
+                            <select id="project-category" name="category" required>
+                                <?php foreach ($categoryOptions as $value => $label): ?>
+                                    <option
+                                        value="<?= escape_html($value) ?>"
+                                        <?= $formValues['category'] === $value ? 'selected' : '' ?>
+                                    >
+                                        <?= escape_html($label) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+
+                            <label for="project-technologies">Technologies <span>(comma-separated)</span></label>
+                            <input
+                                id="project-technologies"
+                                name="technologies"
+                                type="text"
+                                maxlength="1000"
+                                placeholder="PHP, MySQL, JavaScript"
+                                value="<?= escape_html($formValues['technologies']) ?>"
+                            >
+
+                            <label for="project-github-url">GitHub repository URL <span>(optional)</span></label>
+                            <input
+                                id="project-github-url"
+                                name="github_url"
+                                type="url"
+                                maxlength="2048"
+                                placeholder="https://github.com/you/project"
+                                value="<?= escape_html($formValues['github_url']) ?>"
+                            >
+
+                            <label for="project-live-demo-url">Live demo URL <span>(optional)</span></label>
+                            <input
+                                id="project-live-demo-url"
+                                name="live_demo_url"
+                                type="url"
+                                maxlength="2048"
+                                placeholder="https://example.com"
+                                value="<?= escape_html($formValues['live_demo_url']) ?>"
+                            >
+
+                            <label class="project-public-toggle" for="project-is-public">
+                                <input
+                                    id="project-is-public"
+                                    name="is_public"
+                                    type="checkbox"
+                                    value="1"
+                                    <?= $formValues['is_public'] === '1' ? 'checked' : '' ?>
+                                >
+                                <span>
+                                    <strong>Publish in Showcase</strong>
+                                    <small>Anyone can view this build and its public project details.</small>
+                                </span>
+                            </label>
+                        </div>
+
                         <label for="project-status">Status</label>
                         <select id="project-status" name="status" required>
                             <?php foreach ($statusOptions as $value => $label): ?>
@@ -411,6 +573,9 @@ require __DIR__ . '/includes/header.php';
                                         <span class="project-status status-<?= escape_html($statusClass) ?>">
                                             <?= escape_html($statusLabel) ?>
                                         </span>
+                                        <?php if ((int) $project['is_public'] === 1): ?>
+                                            <span class="project-public-badge">In Showcase</span>
+                                        <?php endif; ?>
                                         <span class="project-created">
                                             <?= $createdTimestamp === false
                                                 ? 'Date unavailable'

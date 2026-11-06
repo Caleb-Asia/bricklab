@@ -1,0 +1,2 @@
+RewriteEngine On
+RewriteRule ^u/([A-Za-z0-9_-]{3,50})/?$ profile.php?username=$1 [L,QSA]
