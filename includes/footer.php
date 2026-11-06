@@ -54,6 +54,16 @@
         defer
     ></script>
 <?php endif; ?>
+<?php if (($loadExhibitionScene ?? false) === true): ?>
+    <script
+        src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"
+        defer
+    ></script>
+    <script
+        src="/bricklab/assets/js/showcase-exhibition.js?v=<?= filemtime(__DIR__ . '/../assets/js/showcase-exhibition.js') ?>"
+        defer
+    ></script>
+<?php endif; ?>
 <?php if (($loadShowcaseScript ?? false) === true): ?>
     <script
         src="/bricklab/assets/js/showcase.js?v=<?= filemtime(__DIR__ . '/../assets/js/showcase.js') ?>"

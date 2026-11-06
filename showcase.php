@@ -6,8 +6,8 @@ require_once __DIR__ . '/includes/showcase.php';
 
 $pageTitle = 'Developer Showcase';
 $publicActivePage = 'showcase';
-$loadAuthScene = true;
 $loadShowcaseScript = true;
+$loadExhibitionScene = true;
 $categories = showcase_category_options();
 $databaseError = '';
 $featuredProjects = [];
@@ -82,39 +82,120 @@ $queryValues = array_filter([
     'technology' => $filters['technology'],
     'sort' => $filters['sort'] === 'newest' ? '' : $filters['sort'],
 ], static fn (string $value): bool => $value !== '');
+$exhibitionProjects = array_slice($featuredProjects, 0, 3);
 
 require __DIR__ . '/includes/public-header.php';
 ?>
-    <section class="showcase-hero public-container">
-        <div class="showcase-hero-copy">
-            <p class="public-eyebrow"><span></span> THE BRICKLAB SHOWCASE</p>
-            <h1>Built by developers.<br><span>Shared with the world.</span></h1>
-            <p class="showcase-hero-description">
-                Discover thoughtful projects, meet the developers behind them, and find inspiration for what you can build next.
-            </p>
-            <div class="showcase-hero-actions">
-                <a class="btn btn-primary" href="#projects">Explore projects <span aria-hidden="true">↓</span></a>
-                <a class="btn btn-secondary" href="/bricklab/developers.php">Meet the developers</a>
-            </div>
-            <p class="showcase-privacy-note">Every project here was chosen for public sharing by its creator.</p>
-        </div>
-        <div class="showcase-hero-art" aria-hidden="true">
-            <div class="showcase-art-orbit showcase-art-orbit-one"></div>
-            <div class="showcase-art-orbit showcase-art-orbit-two"></div>
-            <div class="auth-brick-art" data-auth-scene="workshop">
-                <canvas class="auth-scene-canvas"></canvas>
-                <div class="auth-scene-fallback">
-                    <span class="auth-art-orbit auth-art-orbit-one"></span>
-                    <span class="auth-art-orbit auth-art-orbit-two"></span>
-                    <span class="auth-brick auth-brick-purple"><i></i><i></i><i></i><i></i></span>
-                    <span class="auth-brick auth-brick-cyan"><i></i><i></i><i></i></span>
-                    <span class="auth-brick auth-brick-lavender"><i></i><i></i></span>
-                    <span class="auth-brick auth-brick-float"></span>
-                </div>
-            </div>
-            <span class="showcase-art-caption">Ideas take shape here</span>
-        </div>
+    <section
+        class="showcase-hero public-container"
+        data-showcase-exhibition
+        aria-labelledby="showcase-title"
+    >
         <div class="showcase-hero-grid" aria-hidden="true"></div>
+        <div class="showcase-exhibition-intro">
+            <div class="showcase-hero-copy" data-exhibition-reveal>
+                <p class="public-eyebrow"><span></span> THE BRICKLAB SHOWCASE</p>
+                <h1 id="showcase-title">Ideas don't stay <span>ideas.</span><br>They become <em>builds.</em></h1>
+            </div>
+            <div class="showcase-exhibition-support" data-exhibition-reveal>
+                <p class="showcase-hero-description">
+                    Showcase is where developers share projects, explore ideas, and discover what other creators are building.
+                </p>
+                <div class="showcase-hero-actions">
+                    <a class="btn btn-primary" href="#projects">Explore projects <span aria-hidden="true">↓</span></a>
+                    <a class="btn btn-secondary" href="/bricklab/developers.php">Meet developers</a>
+                </div>
+                <p class="showcase-privacy-note">Every project here was chosen for public sharing by its creator.</p>
+            </div>
+        </div>
+
+        <div class="showcase-exhibition-stage" role="group" aria-label="Recent public projects">
+            <div class="showcase-exhibition-depth" data-exhibition-depth>
+                <div class="showcase-exhibition-atmosphere" aria-hidden="true">
+                    <span class="showcase-exhibition-orbit showcase-exhibition-orbit-one"></span>
+                    <span class="showcase-exhibition-orbit showcase-exhibition-orbit-two"></span>
+                    <span class="showcase-exhibition-form showcase-exhibition-form-one"></span>
+                    <span class="showcase-exhibition-form showcase-exhibition-form-two"></span>
+                    <span class="showcase-exhibition-form showcase-exhibition-form-three"></span>
+                    <canvas class="showcase-exhibition-canvas" data-exhibition-canvas></canvas>
+                </div>
+                <?php foreach ($exhibitionProjects as $panelIndex => $project): ?>
+                    <?php
+                    $panelOwnerName = trim((string) ($project['display_name'] ?? ''));
+                    if ($panelOwnerName === '') {
+                        $panelOwnerName = (string) $project['username'];
+                    }
+                    $panelCover = showcase_safe_image_source(
+                        isset($project['cover_image']) ? (string) $project['cover_image'] : null
+                    );
+                    $panelTechnologies = showcase_parse_tags((string) ($project['technologies'] ?? ''));
+                    ?>
+                    <article
+                        class="showcase-exhibition-panel <?= $panelIndex === 0 ? 'showcase-exhibition-panel-lead' : 'showcase-exhibition-panel-supporting' ?>"
+                        data-exhibition-panel
+                    >
+                        <div class="showcase-exhibition-float" data-exhibition-float>
+                            <div class="showcase-exhibition-cover <?= $panelCover === null ? 'showcase-exhibition-cover-placeholder' : '' ?>">
+                                <?php if ($panelCover !== null): ?>
+                                    <img
+                                        src="<?= escape_html($panelCover) ?>"
+                                        alt=""
+                                        loading="<?= $panelIndex === 0 ? 'eager' : 'lazy' ?>"
+                                        <?= $panelIndex === 0 ? 'fetchpriority="high"' : '' ?>
+                                    >
+                                <?php else: ?>
+                                    <span class="showcase-exhibition-cover-mark" aria-hidden="true"></span>
+                                <?php endif; ?>
+                                <span class="showcase-category">
+                                    <?= escape_html(showcase_category_options()[$project['category']] ?? 'Other') ?>
+                                </span>
+                            </div>
+                            <div class="showcase-exhibition-panel-content">
+                                <h2><?= escape_html((string) $project['title']) ?></h2>
+                                <p><?= escape_html(trim((string) ($project['description'] ?? '')) !== ''
+                                    ? (string) $project['description']
+                                    : 'A project shared by its developer.') ?></p>
+                                <?php if ($panelTechnologies !== []): ?>
+                                    <ul class="showcase-exhibition-tags" aria-label="Technologies">
+                                        <?php foreach (array_slice($panelTechnologies, 0, 3) as $technology): ?>
+                                            <li><?= escape_html($technology) ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                                <div class="showcase-exhibition-credit">
+                                    <a href="/bricklab/u/<?= rawurlencode((string) $project['username']) ?>">
+                                        <?= escape_html($panelOwnerName) ?>
+                                        <span>View creator profile <span aria-hidden="true">↗</span></span>
+                                    </a>
+                                    <?php if (
+                                        (string) ($project['github_url'] ?? '') !== ''
+                                        && showcase_url_is_valid((string) $project['github_url'])
+                                    ): ?>
+                                        <a
+                                            class="showcase-exhibition-project-link"
+                                            href="<?= escape_html((string) $project['github_url']) ?>"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >GitHub <span aria-hidden="true">↗</span></a>
+                                    <?php endif; ?>
+                                    <?php if (
+                                        (string) ($project['live_demo_url'] ?? '') !== ''
+                                        && showcase_url_is_valid((string) $project['live_demo_url'])
+                                    ): ?>
+                                        <a
+                                            class="showcase-exhibition-project-link"
+                                            href="<?= escape_html((string) $project['live_demo_url']) ?>"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >Live demo <span aria-hidden="true">↗</span></a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </div>
     </section>
 
     <?php if ($databaseError !== ''): ?>
@@ -123,28 +204,12 @@ require __DIR__ . '/includes/public-header.php';
         </div>
     <?php endif; ?>
 
-    <?php if ($featuredProjects !== []): ?>
-        <section class="public-section public-container" aria-labelledby="featured-title">
-            <div class="public-section-heading">
-                <div>
-                    <p class="public-eyebrow">A FEW TO GET YOU STARTED</p>
-                    <h2 id="featured-title">Featured projects</h2>
-                </div>
-                <a class="public-text-link" href="#projects">Explore all projects <span aria-hidden="true">→</span></a>
-            </div>
-            <div class="showcase-project-grid showcase-featured-grid">
-                <?php foreach ($featuredProjects as $project): ?>
-                    <?php require __DIR__ . '/includes/public-project-card.php'; ?>
-                <?php endforeach; ?>
-            </div>
-        </section>
-    <?php endif; ?>
-
-    <section class="public-section public-container" id="projects" aria-labelledby="projects-title">
+    <section class="public-section public-container showcase-library" id="projects" aria-labelledby="projects-title">
         <div class="public-section-heading">
             <div>
-                <p class="public-eyebrow">FIND YOUR NEXT INSPIRATION</p>
+                <p class="public-eyebrow">THE OPEN COLLECTION</p>
                 <h2 id="projects-title">Explore projects</h2>
+                <p class="showcase-library-description">Search by project or creator, then narrow the collection by technology and category.</p>
             </div>
             <span class="public-result-count">
                 <?= $projects['total'] ?> <?= $projects['total'] === 1 ? 'project' : 'projects' ?>
