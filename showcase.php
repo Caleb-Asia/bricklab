@@ -135,7 +135,7 @@ require __DIR__ . '/includes/public-header.php';
                         data-exhibition-panel
                     >
                         <div class="showcase-exhibition-float" data-exhibition-float>
-                            <div class="showcase-exhibition-cover <?= $panelCover === null ? 'showcase-exhibition-cover-placeholder' : '' ?>">
+                            <div class="showcase-exhibition-cover">
                                 <?php if ($panelCover !== null): ?>
                                     <img
                                         src="<?= escape_html($panelCover) ?>"
@@ -144,7 +144,13 @@ require __DIR__ . '/includes/public-header.php';
                                         <?= $panelIndex === 0 ? 'fetchpriority="high"' : '' ?>
                                     >
                                 <?php else: ?>
-                                    <span class="showcase-exhibition-cover-mark" aria-hidden="true"></span>
+                                    <img
+                                        class="showcase-exhibition-cover-fallback"
+                                        src="/bricklab/assets/images/bricklab-project-placeholder.webp"
+                                        alt=""
+                                        loading="<?= $panelIndex === 0 ? 'eager' : 'lazy' ?>"
+                                        <?= $panelIndex === 0 ? 'fetchpriority="high"' : '' ?>
+                                    >
                                 <?php endif; ?>
                                 <span class="showcase-category">
                                     <?= escape_html(showcase_category_options()[$project['category']] ?? 'Other') ?>

@@ -20,11 +20,12 @@ $projectTechnologies = showcase_parse_tags((string) ($project['technologies'] ??
             loading="lazy"
         >
     <?php else: ?>
-        <div class="showcase-project-cover showcase-project-cover-placeholder" aria-hidden="true">
-            <span class="showcase-cover-brick"></span>
-            <span class="showcase-cover-brick"></span>
-            <span class="showcase-cover-brick"></span>
-        </div>
+        <img
+            class="showcase-project-cover showcase-project-cover-fallback"
+            src="/bricklab/assets/images/bricklab-project-placeholder.webp"
+            alt=""
+            loading="lazy"
+        >
     <?php endif; ?>
     <div class="showcase-project-content">
         <div class="showcase-project-heading">
