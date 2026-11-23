@@ -2,10 +2,10 @@
 
 $isPublicShell = $isPublicShell ?? false;
 $navigationPage = $navigationPage ?? ($currentPage ?? 'dashboard');
-$pageTitle = $pageTitle ?? 'Dashboard';
+$pageTitle = $pageTitle ?? 'The Workshop';
 $isSignedIn = current_user_id() !== null;
-$brandHref = $isSignedIn ? '/bricklab/' : '/bricklab/showcase.php';
-$brandLabel = $isSignedIn ? 'BrickLab dashboard' : 'BrickLab Showcase';
+$brandHref = $isSignedIn ? '/bricklab/' : '/bricklab/grid.php';
+$brandLabel = $isSignedIn ? 'BrickLab Workshop' : 'BrickLab — The Grid';
 ?>
 <!DOCTYPE html>
 <html lang="en">

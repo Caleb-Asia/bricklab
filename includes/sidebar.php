@@ -1,25 +1,25 @@
 <?php
 $isSignedIn = current_user_id() !== null;
 $navigationPage = $navigationPage ?? 'dashboard';
-$brandHref = $isSignedIn ? '/bricklab/' : '/bricklab/showcase.php';
-$brandLabel = $isSignedIn ? 'BrickLab dashboard' : 'BrickLab Showcase';
+$brandHref = $isSignedIn ? '/bricklab/' : '/bricklab/grid.php';
+$brandLabel = $isSignedIn ? 'BrickLab Workshop' : 'BrickLab — The Grid';
 
 $navigationItems = $isSignedIn
     ? [
-        'WORKSPACE' => [
-            'dashboard' => ['Dashboard', '/bricklab/', 'dashboard'],
+        'THE WORKSHOP' => [
+            'dashboard' => ['Workshop', '/bricklab/', 'dashboard'],
             'projects' => ['My Builds', '/bricklab/projects.php', 'projects'],
-            'tasks' => ['Tasks', '/bricklab/tasks.php', 'tasks'],
+            'tasks' => ['Task Board', '/bricklab/tasks.php', 'tasks'],
         ],
         'COMMUNITY' => [
-            'showcase' => ['Showcase', '/bricklab/showcase.php', 'showcase'],
-            'developers' => ['Developers', '/bricklab/developers.php', 'developers'],
+            'grid' => ['The Grid', '/bricklab/grid.php', 'grid'],
+            'build-wall' => ['Build Wall', '/bricklab/showcase.php', 'showcase'],
         ],
     ]
     : [
         'COMMUNITY' => [
-            'showcase' => ['Showcase', '/bricklab/showcase.php', 'showcase'],
-            'developers' => ['Developers', '/bricklab/developers.php', 'developers'],
+            'grid' => ['The Grid', '/bricklab/grid.php', 'grid'],
+            'build-wall' => ['Build Wall', '/bricklab/showcase.php', 'showcase'],
         ],
     ];
 
@@ -27,8 +27,8 @@ $navigationIcons = [
     'dashboard' => '<rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/>',
     'projects' => '<rect x="5" y="4" width="14" height="16" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
     'tasks' => '<rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="m8 12 2.5 2.5L16 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
-    'showcase' => '<rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
-    'developers' => '<circle cx="9" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M3 20v-1.5A4.5 4.5 0 0 1 7.5 14h3A4.5 4.5 0 0 1 15 18.5V20M16 4.8a3.5 3.5 0 0 1 0 6.4M17 14.2a4.5 4.5 0 0 1 4 4.3V20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    'grid' => '<path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+    'build-wall' => '<rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
     'profile' => '<circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
     'sign-in' => '<path d="M10 17l5-5-5-5m5 5H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
 ];
@@ -91,7 +91,7 @@ $navigationIcons = [
                             stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
                     </svg>
                 </span>
-                <p>Every great build starts with one brick.</p>
+                <p>From first brick to final build.</p>
             </div>
         <?php endif; ?>
     </div>

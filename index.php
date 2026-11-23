@@ -274,7 +274,7 @@ try {
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<!-- Dashboard welcome -->
+<!-- The Workshop welcome -->
 <section class="dashboard-welcome">
     <div class="welcome-copy">
         <span class="eyebrow">

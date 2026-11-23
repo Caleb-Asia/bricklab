@@ -11,33 +11,37 @@ $projectCover = showcase_safe_image_source(
 );
 $projectTechnologies = showcase_parse_tags((string) ($project['technologies'] ?? ''));
 ?>
-<article class="showcase-project-card surface">
+<article class="showcase-project-card surface<?= isset($project['wall_size']) ? ' build-tile-' . escape_html($project['wall_size']) : '' ?>">
     <?php if ($projectCover !== null): ?>
+        <a class="showcase-project-cover-link" href="/bricklab/build.php?id=<?= (int) $project['id'] ?>" aria-label="View <?= escape_html((string) $project['title']) ?> Build Details">
         <img
             class="showcase-project-cover"
             src="<?= escape_html($projectCover) ?>"
             alt=""
             loading="lazy"
         >
+        </a>
     <?php else: ?>
+        <a class="showcase-project-cover-link" href="/bricklab/build.php?id=<?= (int) $project['id'] ?>" aria-label="View <?= escape_html((string) $project['title']) ?> Build Details">
         <img
             class="showcase-project-cover showcase-project-cover-fallback"
             src="/bricklab/assets/images/bricklab-project-placeholder.webp"
             alt=""
             loading="lazy"
         >
+        </a>
     <?php endif; ?>
     <div class="showcase-project-content">
         <div class="showcase-project-heading">
             <span class="showcase-category">
                 <?= escape_html(showcase_category_options()[$project['category']] ?? 'Other') ?>
             </span>
-            <h3><?= escape_html((string) $project['title']) ?></h3>
+            <h3><a href="/bricklab/build.php?id=<?= (int) $project['id'] ?>"><?= escape_html((string) $project['title']) ?></a></h3>
         </div>
         <p class="showcase-project-description">
             <?= escape_html(trim((string) ($project['description'] ?? '')) !== ''
                 ? (string) $project['description']
-                : 'A project shared by its developer.') ?>
+                : 'A Build showcased by its Builder.') ?>
         </p>
         <?php if ($projectTechnologies !== []): ?>
             <ul class="showcase-tag-list" aria-label="Technologies">

@@ -10,11 +10,6 @@
         const reducedMotion = window.matchMedia(
             "(prefers-reduced-motion: reduce)"
         );
-        const finePointer = window.matchMedia(
-            "(hover: hover) and (pointer: fine)"
-        );
-        const stage = exhibition.querySelector(".showcase-exhibition-stage");
-        const depth = exhibition.querySelector("[data-exhibition-depth]");
         const canvas = exhibition.querySelector("[data-exhibition-canvas]");
         const entranceElements = exhibition.querySelectorAll(
             "[data-exhibition-reveal], [data-exhibition-panel]"
@@ -246,35 +241,6 @@
         } else {
             isInView = true;
             initializeThreeScene();
-        }
-
-        if (finePointer.matches && stage && depth) {
-            const moveX = gsap.quickTo(depth, "x", {
-                duration: 0.8,
-                ease: "power3.out",
-            });
-            const moveY = gsap.quickTo(depth, "y", {
-                duration: 0.8,
-                ease: "power3.out",
-            });
-
-            stage.addEventListener("pointermove", (event) => {
-                if (reducedMotion.matches || window.innerWidth <= 700) {
-                    return;
-                }
-                const bounds = stage.getBoundingClientRect();
-                const x = (event.clientX - bounds.left) / bounds.width - 0.5;
-                const y = (event.clientY - bounds.top) / bounds.height - 0.5;
-                moveX(x * 8);
-                moveY(y * 6);
-            }, {
-                passive: true,
-                signal: listenerController.signal,
-            });
-            stage.addEventListener("pointerleave", () => {
-                moveX(0);
-                moveY(0);
-            }, { signal: listenerController.signal });
         }
 
         reducedMotion.addEventListener("change", handleMotionPreferenceChange, {

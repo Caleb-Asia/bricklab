@@ -12,8 +12,8 @@ require __DIR__ . '/includes/public-header.php';
             <p class="public-eyebrow">ABOUT BRICKLAB</p>
             <h1 id="about-title">A place to build, track, and share.</h1>
             <p>
-                BrickLab helps developers bring their projects together, keep track of the work,
-                and share the builds they are proud of.
+                BrickLab helps Builders organise their Builds, keep track of the work,
+                and share what they are proud of.
             </p>
         </header>
 
@@ -21,20 +21,20 @@ require __DIR__ . '/includes/public-header.php';
             <article class="about-feature surface">
                 <span class="about-feature-number">01</span>
                 <h2>Build your way</h2>
-                <p>Organize your projects and tasks in a workspace made to keep ideas moving.</p>
-                <a href="/bricklab/register.php">Create your workspace <span aria-hidden="true">→</span></a>
+                <p>Organise your Builds and tasks in The Workshop so ideas keep moving.</p>
+                <a href="/bricklab/register.php">Enter The Workshop <span aria-hidden="true">→</span></a>
             </article>
             <article class="about-feature surface">
                 <span class="about-feature-number">02</span>
                 <h2>Discover what others make</h2>
-                <p>Explore projects their creators have deliberately chosen to publish in the Showcase.</p>
-                <a href="/bricklab/showcase.php">Explore the Showcase <span aria-hidden="true">→</span></a>
+                <p>Explore Builds that their Builders have deliberately chosen to showcase on the Build Wall.</p>
+                <a href="/bricklab/showcase.php">Explore the Build Wall <span aria-hidden="true">→</span></a>
             </article>
             <article class="about-feature surface">
                 <span class="about-feature-number">03</span>
                 <h2>Meet the people behind them</h2>
-                <p>Visit public developer profiles to learn about creators and browse their shared work.</p>
-                <a href="/bricklab/developers.php">Meet the developers <span aria-hidden="true">→</span></a>
+                <p>Visit Builder Profiles to learn about creators and browse their shared work.</p>
+                <a href="/bricklab/grid.php">Enter The Grid <span aria-hidden="true">→</span></a>
             </article>
         </div>
     </section>

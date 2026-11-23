@@ -2,14 +2,14 @@
         </main>
         <footer class="public-footer">
             <div class="public-footer-inner">
-                <a class="brand" href="/bricklab/showcase.php">
+                <a class="brand" href="/bricklab/grid.php">
                     <span class="brand-icon" aria-hidden="true">B</span>
                     <span class="brand-name">Brick<span class="brand-accent">Lab</span></span>
                 </a>
-                <p>Build. Track. Showcase. A place for developers to share what they make.</p>
+                <p>From first brick to final build. Where Builders connect and showcase their work.</p>
                 <div>
-                    <a href="/bricklab/showcase.php">Showcase</a>
-                    <a href="/bricklab/developers.php">Developers</a>
+                    <a href="/bricklab/grid.php">The Grid</a>
+                    <a href="/bricklab/showcase.php">Build Wall</a>
                     <a href="/bricklab/about.php">About</a>
                     <?php if (current_user_id() === null): ?>
                         <a href="/bricklab/register.php">Join BrickLab</a>
@@ -27,8 +27,8 @@
 
 <footer class="site-footer">
     <div class="container footer-inner">
-        <p>&copy; <?= date('Y') ?> BrickLab. Build. Track. Showcase.</p>
-        <span>Every great build starts with one brick.</span>
+        <p>&copy; <?= date('Y') ?> BrickLab. From first brick to final build.</p>
+        <span>The Workshop • The Grid • Build Wall</span>
     </div>
 </footer>
 <?php endif; ?>
@@ -67,6 +67,12 @@
 <?php if (($loadShowcaseScript ?? false) === true): ?>
     <script
         src="/bricklab/assets/js/showcase.js?v=<?= filemtime(__DIR__ . '/../assets/js/showcase.js') ?>"
+        defer
+    ></script>
+<?php endif; ?>
+<?php if (($loadCommunityScript ?? false) === true && file_exists(__DIR__ . '/../assets/js/community.js')): ?>
+    <script
+        src="/bricklab/assets/js/community.js?v=<?= filemtime(__DIR__ . '/../assets/js/community.js') ?>"
         defer
     ></script>
 <?php endif; ?>

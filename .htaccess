@@ -1,2 +1,6 @@
 RewriteEngine On
 RewriteRule ^u/([A-Za-z0-9_-]{3,50})/?$ profile.php?username=$1 [L,QSA]
+RewriteRule ^grid/?$ grid.php [L,QSA]
+RewriteRule ^community/?$ grid.php [R=301,L]
+RewriteRule ^build-wall/?$ showcase.php [L,QSA]
+RewriteRule ^build/([0-9]+)/?$ build.php?id=$1 [L,QSA]

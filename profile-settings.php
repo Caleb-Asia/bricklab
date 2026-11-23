@@ -290,7 +290,7 @@ require __DIR__ . '/includes/header.php';
                     </label>
                     <label>
                         Professional role
-                        <input name="professional_role" maxlength="100" value="<?= escape_html($values['professional_role']) ?>" placeholder="e.g. Full-stack developer">
+                        <input name="professional_role" maxlength="100" value="<?= escape_html($values['professional_role']) ?>" placeholder="e.g. Full-stack Builder">
                     </label>
                     <label>
                         Location

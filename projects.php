@@ -43,19 +43,26 @@ function fetch_owned_project(PDO $pdo, int $projectId, int $userId): array|false
 {
     $statement = $pdo->prepare(
         'SELECT
-            id,
-            title,
-            description,
-            status,
-            category,
-            technologies,
-            github_url,
-            live_demo_url,
-            is_public,
-            created_at,
-            updated_at
-        FROM projects
-        WHERE id = :id AND user_id = :user_id
+            p.id,
+            p.title,
+            p.description,
+            p.status,
+            p.category,
+            p.technologies,
+            p.github_url,
+            p.live_demo_url,
+            p.is_public,
+            p.created_at,
+            p.updated_at,
+            (
+                SELECT img.image_path
+                FROM project_images AS img
+                WHERE img.project_id = p.id
+                ORDER BY img.id ASC
+                LIMIT 1
+            ) AS image_path
+        FROM projects AS p
+        WHERE p.id = :id AND p.user_id = :user_id
         LIMIT 1'
     );
     $statement->execute([
@@ -126,6 +133,55 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             }
         }
 
+        $removeImage = ($_POST['remove_image'] ?? null) === '1';
+        $projectImageUploadInfo = null;
+
+        if (array_key_exists('project_image', $_FILES)) {
+            $imageFile = $_FILES['project_image'];
+            if (!is_array($imageFile) || !isset($imageFile['error']) || !is_int($imageFile['error'])) {
+                $errors[] = 'The selected build picture could not be processed. Please choose it again.';
+            } elseif ($imageFile['error'] !== UPLOAD_ERR_NO_FILE) {
+                if ($imageFile['error'] !== UPLOAD_ERR_OK) {
+                    $errors[] = $imageFile['error'] === UPLOAD_ERR_INI_SIZE
+                        || $imageFile['error'] === UPLOAD_ERR_FORM_SIZE
+                        ? 'Build picture must be 5 MB or smaller.'
+                        : 'The build picture could not be uploaded. Please try again.';
+                } elseif (!isset($imageFile['tmp_name']) || !is_string($imageFile['tmp_name'])
+                    || !is_uploaded_file($imageFile['tmp_name'])) {
+                    $errors[] = 'The selected build picture was not uploaded securely.';
+                } else {
+                    $fileSize = filesize($imageFile['tmp_name']);
+                    if ($fileSize === false || $fileSize > 5 * 1024 * 1024) {
+                        $errors[] = 'Build picture must be 5 MB or smaller.';
+                    } else {
+                        $fileInfo = new finfo(FILEINFO_MIME_TYPE);
+                        $mimeType = $fileInfo->file($imageFile['tmp_name']);
+                        $image = getimagesize($imageFile['tmp_name']);
+                        $allowedImages = [
+                            'image/jpeg' => ['extension' => 'jpg', 'type' => IMAGETYPE_JPEG],
+                            'image/png' => ['extension' => 'png', 'type' => IMAGETYPE_PNG],
+                            'image/webp' => ['extension' => 'webp', 'type' => IMAGETYPE_WEBP],
+                        ];
+
+                        if (
+                            !is_string($mimeType)
+                            || !isset($allowedImages[$mimeType])
+                            || $image === false
+                            || ($image['mime'] ?? null) !== $mimeType
+                            || ($image[2] ?? null) !== $allowedImages[$mimeType]['type']
+                        ) {
+                            $errors[] = 'Choose a valid JPG, JPEG, PNG, or WebP image for your build.';
+                        } else {
+                            $projectImageUploadInfo = [
+                                'temporary_path' => $imageFile['tmp_name'],
+                                'extension' => $allowedImages[$mimeType]['extension'],
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
         $postedProjectId = null;
         if ($action === 'update') {
             $postedProjectId = positive_integer($_POST['project_id'] ?? null);
@@ -134,6 +190,47 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $errors[] = 'That project could not be found.';
             } else {
                 $editId = $postedProjectId;
+            }
+        }
+
+        if ($errors === []) {
+            $savedImagePath = null;
+            if ($projectImageUploadInfo !== null) {
+                $projectDirectory = __DIR__ . '/uploads/projects';
+                if (
+                    !is_dir($projectDirectory)
+                    && !mkdir($projectDirectory, 0755, true)
+                    && !is_dir($projectDirectory)
+                ) {
+                    error_log('BrickLab could not create the project images directory.');
+                    $errors[] = 'The build picture could not be saved. Please try again later.';
+                } else {
+                    $htaccessPath = $projectDirectory . '/.htaccess';
+                    if (!is_file($htaccessPath)) {
+                        @file_put_contents(
+                            $htaccessPath,
+                            "Options -Indexes\nSetHandler default-handler\n\n<FilesMatch \"(?i)\\.(php[0-9]?|phtml|phar|cgi|pl|py|rb|sh|asp|aspx|jsp|exe|dll|com|bat|cmd)$\">\n    Require all denied\n</FilesMatch>\n"
+                        );
+                    }
+
+                    try {
+                        $fileName = bin2hex(random_bytes(16)) . '.' . $projectImageUploadInfo['extension'];
+                    } catch (Random\RandomException $exception) {
+                        error_log('BrickLab could not generate a project image filename: ' . $exception->getMessage());
+                        $errors[] = 'The build picture could not be saved. Please try again later.';
+                        $fileName = '';
+                    }
+
+                    if ($errors === []) {
+                        $destination = $projectDirectory . '/' . $fileName;
+                        if (!move_uploaded_file($projectImageUploadInfo['temporary_path'], $destination)) {
+                            error_log('BrickLab could not move an uploaded project image into storage.');
+                            $errors[] = 'The build picture could not be saved. Please try again.';
+                        } else {
+                            $savedImagePath = '/bricklab/uploads/projects/' . $fileName;
+                        }
+                    }
+                }
             }
         }
 
@@ -182,6 +279,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                         'is_public' => $formValues['is_public'],
                     ]);
 
+                    $newProjectId = (int) $pdo->lastInsertId();
+
+                    if ($savedImagePath !== null) {
+                        $imgStatement = $pdo->prepare(
+                            'INSERT INTO project_images (project_id, image_path)
+                            VALUES (:project_id, :image_path)'
+                        );
+                        $imgStatement->execute([
+                            'project_id' => $newProjectId,
+                            'image_path' => $savedImagePath,
+                        ]);
+                    }
+
                     set_flash_message('success', 'Your build has been created.');
                 } else {
                     $existingProject = fetch_owned_project($pdo, $postedProjectId, $userId);
@@ -222,6 +332,45 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                             'user_id' => $userId,
                         ]);
 
+                        $existingImgStmt = $pdo->prepare(
+                            'SELECT id, image_path FROM project_images WHERE project_id = :project_id ORDER BY id ASC LIMIT 1'
+                        );
+                        $existingImgStmt->execute(['project_id' => $postedProjectId]);
+                        $existingImageRow = $existingImgStmt->fetch();
+
+                        if ($existingImageRow !== false && ($removeImage || $savedImagePath !== null)) {
+                            $oldPath = (string) $existingImageRow['image_path'];
+                            if (str_starts_with($oldPath, '/bricklab/uploads/projects/')) {
+                                $diskPath = __DIR__ . '/uploads/projects/' . basename($oldPath);
+                                if (is_file($diskPath)) {
+                                    @unlink($diskPath);
+                                }
+                            }
+                        }
+
+                        if ($removeImage && $savedImagePath === null) {
+                            $delStmt = $pdo->prepare('DELETE FROM project_images WHERE project_id = :project_id');
+                            $delStmt->execute(['project_id' => $postedProjectId]);
+                        } elseif ($savedImagePath !== null) {
+                            if ($existingImageRow !== false) {
+                                $updateImgStmt = $pdo->prepare(
+                                    'UPDATE project_images SET image_path = :image_path WHERE id = :id'
+                                );
+                                $updateImgStmt->execute([
+                                    'image_path' => $savedImagePath,
+                                    'id' => (int) $existingImageRow['id'],
+                                ]);
+                            } else {
+                                $insertImgStmt = $pdo->prepare(
+                                    'INSERT INTO project_images (project_id, image_path) VALUES (:project_id, :image_path)'
+                                );
+                                $insertImgStmt->execute([
+                                    'project_id' => $postedProjectId,
+                                    'image_path' => $savedImagePath,
+                                ]);
+                            }
+                        }
+
                         set_flash_message('success', 'Your build has been updated.');
                     }
                 }
@@ -244,6 +393,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $errors[] = 'That project could not be found.';
         } else {
             try {
+                $imageStmt = $pdo->prepare(
+                    'SELECT image_path FROM project_images WHERE project_id = :project_id'
+                );
+                $imageStmt->execute(['project_id' => $postedProjectId]);
+                $imagesToDelete = $imageStmt->fetchAll();
+                foreach ($imagesToDelete as $imgRow) {
+                    $path = (string) ($imgRow['image_path'] ?? '');
+                    if (str_starts_with($path, '/bricklab/uploads/projects/')) {
+                        $diskPath = __DIR__ . '/uploads/projects/' . basename($path);
+                        if (is_file($diskPath)) {
+                            @unlink($diskPath);
+                        }
+                    }
+                }
+
                 $statement = $pdo->prepare(
                     'DELETE FROM projects WHERE id = :id AND user_id = :user_id'
                 );
@@ -293,6 +457,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     }
 }
 
+$currentProjectImage = null;
 if ($editId !== null) {
     try {
         $editProject = fetch_owned_project($pdo, $editId, $userId);
@@ -300,17 +465,22 @@ if ($editId !== null) {
             http_response_code(404);
             $pageError = 'That project could not be found.';
             $editId = null;
-        } elseif (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
-            $formValues = [
-                'title' => (string) $editProject['title'],
-                'description' => (string) ($editProject['description'] ?? ''),
-                'status' => (string) ($editProject['status'] ?? 'planning'),
-                'category' => (string) ($editProject['category'] ?? 'other'),
-                'technologies' => (string) ($editProject['technologies'] ?? ''),
-                'github_url' => (string) ($editProject['github_url'] ?? ''),
-                'live_demo_url' => (string) ($editProject['live_demo_url'] ?? ''),
-                'is_public' => (int) ($editProject['is_public'] ?? 0) === 1 ? '1' : '0',
-            ];
+        } else {
+            $currentProjectImage = showcase_safe_image_source(
+                isset($editProject['image_path']) ? (string) $editProject['image_path'] : null
+            );
+            if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+                $formValues = [
+                    'title' => (string) $editProject['title'],
+                    'description' => (string) ($editProject['description'] ?? ''),
+                    'status' => (string) ($editProject['status'] ?? 'planning'),
+                    'category' => (string) ($editProject['category'] ?? 'other'),
+                    'technologies' => (string) ($editProject['technologies'] ?? ''),
+                    'github_url' => (string) ($editProject['github_url'] ?? ''),
+                    'live_demo_url' => (string) ($editProject['live_demo_url'] ?? ''),
+                    'is_public' => (int) ($editProject['is_public'] ?? 0) === 1 ? '1' : '0',
+                ];
+            }
         }
     } catch (PDOException $exception) {
         error_log('BrickLab project lookup failed: ' . $exception->getMessage());
@@ -337,10 +507,23 @@ if ($confirmDeleteId !== null) {
 $projects = [];
 try {
     $statement = $pdo->prepare(
-        'SELECT id, title, description, status, is_public, created_at
-        FROM projects
-        WHERE user_id = :user_id
-        ORDER BY created_at DESC, id DESC'
+        'SELECT
+            project.id,
+            project.title,
+            project.description,
+            project.status,
+            project.is_public,
+            project.created_at,
+            (
+                SELECT img.image_path
+                FROM project_images AS img
+                WHERE img.project_id = project.id
+                ORDER BY img.id ASC
+                LIMIT 1
+            ) AS cover_image
+        FROM projects AS project
+        WHERE project.user_id = :user_id
+        ORDER BY project.created_at DESC, project.id DESC'
     );
     $statement->execute(['user_id' => $userId]);
     $projects = $statement->fetchAll();
@@ -423,7 +606,12 @@ require __DIR__ . '/includes/header.php';
                         <?= $editProject !== null ? 'Edit build' : 'Start a new build' ?>
                     </h2>
 
-                    <form class="project-form" method="post" action="/bricklab/projects.php">
+                    <form
+                        class="project-form"
+                        method="post"
+                        action="/bricklab/projects.php"
+                        enctype="multipart/form-data"
+                    >
                         <input type="hidden" name="_csrf" value="<?= escape_html(csrf_token()) ?>">
                         <input
                             type="hidden"
@@ -458,6 +646,39 @@ require __DIR__ . '/includes/header.php';
                             maxlength="5000"
                             placeholder="Add a goal or a few notes about your build."
                         ><?= escape_html($formValues['description']) ?></textarea>
+
+                        <div class="project-image-field">
+                            <label for="project-image">Project picture <span>(optional)</span></label>
+                            <?php if ($currentProjectImage !== null): ?>
+                                <img
+                                    class="project-image-preview"
+                                    src="<?= escape_html($currentProjectImage) ?>"
+                                    alt=""
+                                    loading="lazy"
+                                >
+                            <?php endif; ?>
+                            <p id="project-image-help" class="project-image-help">
+                                Upload a JPG, PNG, or WebP up to 5 MB. Without one, the default project picture is used.
+                            </p>
+                            <input
+                                id="project-image"
+                                name="project_image"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                                aria-describedby="project-image-help"
+                            >
+                            <?php if ($currentProjectImage !== null): ?>
+                                <label class="project-image-remove" for="remove-project-image">
+                                    <input
+                                        id="remove-project-image"
+                                        name="remove_image"
+                                        type="checkbox"
+                                        value="1"
+                                    >
+                                    Remove current picture and use the default
+                                </label>
+                            <?php endif; ?>
+                        </div>
 
                         <div class="project-showcase-fields">
                             <p class="project-showcase-heading">Showcase details</p>
@@ -567,8 +788,26 @@ require __DIR__ . '/includes/header.php';
                                     : 'unknown';
                                 $statusLabel = $statusOptions[$status] ?? 'Status unavailable';
                                 $createdTimestamp = strtotime((string) $project['created_at']);
+                                $projectCover = showcase_safe_image_source(
+                                    isset($project['cover_image']) ? (string) $project['cover_image'] : null
+                                );
                                 ?>
                                 <article class="project-card surface">
+                                    <?php if ($projectCover !== null): ?>
+                                        <img
+                                            class="project-card-cover"
+                                            src="<?= escape_html($projectCover) ?>"
+                                            alt=""
+                                            loading="lazy"
+                                        >
+                                    <?php else: ?>
+                                        <img
+                                            class="project-card-cover project-card-cover-fallback"
+                                            src="/bricklab/assets/images/bricklab-project-placeholder.webp"
+                                            alt=""
+                                            loading="lazy"
+                                        >
+                                    <?php endif; ?>
                                     <div class="project-card-top">
                                         <span class="project-status status-<?= escape_html($statusClass) ?>">
                                             <?= escape_html($statusLabel) ?>

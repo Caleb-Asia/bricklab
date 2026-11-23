@@ -4,7 +4,7 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/showcase.php';
 
-$pageTitle = 'Developer Showcase';
+$pageTitle = 'Build Wall';
 $publicActivePage = 'showcase';
 $loadShowcaseScript = true;
 $loadExhibitionScene = true;
@@ -94,18 +94,18 @@ require __DIR__ . '/includes/public-header.php';
         <div class="showcase-hero-grid" aria-hidden="true"></div>
         <div class="showcase-exhibition-intro">
             <div class="showcase-hero-copy" data-exhibition-reveal>
-                <p class="public-eyebrow"><span></span> THE BRICKLAB SHOWCASE</p>
+                <p class="public-eyebrow"><span></span> THE BUILD WALL</p>
                 <h1 id="showcase-title">Ideas don't stay <span>ideas.</span><br>They become <em>builds.</em></h1>
             </div>
             <div class="showcase-exhibition-support" data-exhibition-reveal>
                 <p class="showcase-hero-description">
-                    Showcase is where developers share projects, explore ideas, and discover what other creators are building.
+                    Build Wall is where Builders showcase what they've created, explore ideas, and discover inspiring work.
                 </p>
                 <div class="showcase-hero-actions">
-                    <a class="btn btn-primary" href="#projects">Explore projects <span aria-hidden="true">↓</span></a>
-                    <a class="btn btn-secondary" href="/bricklab/developers.php">Meet developers</a>
+                    <a class="btn btn-primary" href="#projects">Explore Builds <span aria-hidden="true">↓</span></a>
+                    <a class="btn btn-secondary" href="/bricklab/grid.php">Enter The Grid</a>
                 </div>
-                <p class="showcase-privacy-note">Every project here was chosen for public sharing by its creator.</p>
+                <p class="showcase-privacy-note">Every Build here was chosen for the Build Wall by its Builder.</p>
             </div>
         </div>
 
@@ -160,7 +160,7 @@ require __DIR__ . '/includes/public-header.php';
                                 <h2><?= escape_html((string) $project['title']) ?></h2>
                                 <p><?= escape_html(trim((string) ($project['description'] ?? '')) !== ''
                                     ? (string) $project['description']
-                                    : 'A project shared by its developer.') ?></p>
+                                    : 'A Build shared by its Builder.') ?></p>
                                 <?php if ($panelTechnologies !== []): ?>
                                     <ul class="showcase-exhibition-tags" aria-label="Technologies">
                                         <?php foreach (array_slice($panelTechnologies, 0, 3) as $technology): ?>
@@ -171,7 +171,7 @@ require __DIR__ . '/includes/public-header.php';
                                 <div class="showcase-exhibition-credit">
                                     <a href="/bricklab/u/<?= rawurlencode((string) $project['username']) ?>">
                                         <?= escape_html($panelOwnerName) ?>
-                                        <span>View creator profile <span aria-hidden="true">↗</span></span>
+                                        <span>View Builder profile <span aria-hidden="true">↗</span></span>
                                     </a>
                                     <?php if (
                                         (string) ($project['github_url'] ?? '') !== ''
@@ -213,24 +213,24 @@ require __DIR__ . '/includes/public-header.php';
     <section class="public-section public-container showcase-library" id="projects" aria-labelledby="projects-title">
         <div class="public-section-heading">
             <div>
-                <p class="public-eyebrow">THE OPEN COLLECTION</p>
-                <h2 id="projects-title">Explore projects</h2>
-                <p class="showcase-library-description">Search by project or creator, then narrow the collection by technology and category.</p>
+                <p class="public-eyebrow">THE BUILD WALL</p>
+                <h2 id="projects-title">Explore Builds</h2>
+                <p class="showcase-library-description">Search by Build or Builder, then narrow the collection by technology and category.</p>
             </div>
             <span class="public-result-count">
-                <?= $projects['total'] ?> <?= $projects['total'] === 1 ? 'project' : 'projects' ?>
+                <?= $projects['total'] ?> <?= $projects['total'] === 1 ? 'Build' : 'Builds' ?>
             </span>
         </div>
 
         <form class="showcase-filters surface" method="get" action="/bricklab/showcase.php" data-showcase-filters>
             <label class="showcase-search-field">
-                <span>Search projects</span>
+                <span>Search Builds</span>
                 <input
                     type="search"
                     name="search"
                     maxlength="100"
                     value="<?= escape_html($filters['search']) ?>"
-                    placeholder="Search projects or developers"
+                    placeholder="Search Builds or Builders"
                 >
             </label>
             <label>
@@ -298,7 +298,7 @@ require __DIR__ . '/includes/public-header.php';
                 <h3><?= $queryValues === [] ? 'The showcase is just getting started' : 'No projects match those filters' ?></h3>
                 <p>
                     <?= $queryValues === []
-                        ? 'When developers publish a project, it will find a home here.'
+                        ? 'When Builders showcase a Build, it will find a home here.'
                         : 'Try a different search or clear some filters to discover more.' ?>
                 </p>
                 <?php if ($queryValues !== []): ?>

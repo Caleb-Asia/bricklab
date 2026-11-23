@@ -20,13 +20,7 @@ $getEnvironmentValue = static function (string $name): ?string {
 };
 
 if (is_file($envFile)) {
-    if (!is_readable($envFile)) {
-        error_log('Unable to read the local .env file.');
-        http_response_code(500);
-        exit('Database configuration is unavailable. Check the local .env file.');
-    }
-
-    $envLines = file($envFile, FILE_IGNORE_NEW_LINES);
+    $envLines = @file($envFile, FILE_IGNORE_NEW_LINES);
 
     if ($envLines === false) {
         error_log('Unable to read the local .env file.');
