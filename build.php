@@ -34,6 +34,10 @@ if ($buildId === null) {
                 'SELECT post.id, post.user_id, post.body, post.post_type, post.project_id,
                         post.created_at, user.username, user.display_name, user.avatar_url,
                         user.professional_role, project.title AS project_title,
+                        project.description AS project_description,
+                        project.technologies AS project_technologies,
+                        (SELECT image.image_path FROM project_images AS image
+                         WHERE image.project_id = project.id ORDER BY image.id ASC LIMIT 1) AS project_cover,
                         (SELECT COUNT(*) FROM post_likes AS pl WHERE pl.post_id = post.id) AS like_count,
                         ' . ($userId !== null
                             ? '(SELECT COUNT(*) FROM post_likes AS vl WHERE vl.post_id = post.id AND vl.user_id = :viewer_id) AS viewer_liked'

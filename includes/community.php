@@ -13,25 +13,23 @@ function community_post_type_options(): array
 {
     return [
         'update' => 'Builder Update',
-        'milestone' => 'Project Milestone',
-        'release' => 'Build Release',
-        'learning' => 'Learning Log',
+        'milestone' => 'Build Log',
+        'release' => 'Build Log',
+        'learning' => 'Builder Update',
     ];
 }
 
 function community_post_type_label(string $type): string
 {
-    return community_post_type_options()[$type] ?? 'Builder Update';
+    return match ($type) {
+        'milestone', 'release' => 'Build Log',
+        default => 'Builder Update',
+    };
 }
 
-function community_post_type_icon(string $type): string
+function community_format_brick_id(string $username): string
 {
-    return match ($type) {
-        'release' => '🚀',
-        'learning' => '📖',
-        'milestone' => '🏆',
-        default => '💬',
-    };
+    return '@' . ltrim(trim($username), '@');
 }
 
 // ——————————————
@@ -95,41 +93,136 @@ function community_update_post(PDO $pdo, int $postId, int $userId, string $body,
     return $statement->rowCount() >= 0;
 }
 
-function community_fetch_feed(PDO $pdo, int $limit = 20, int $offset = 0, ?int $viewerUserId = null): array
+function community_fetch_feed(PDO $pdo, int $limit = 20, int $offset = 0, ?int $viewerUserId = null, string $feedType = 'buildmates'): array
 {
-    $likeColumn = $viewerUserId !== null
-        ? ', (SELECT COUNT(*) FROM post_likes AS vl WHERE vl.post_id = post.id AND vl.user_id = :viewer_id) AS viewer_liked'
-        : ', 0 AS viewer_liked';
-    $params = [];
-    if ($viewerUserId !== null) {
-        $params['viewer_id'] = $viewerUserId;
+    $feedType = $feedType === 'everyone' ? 'everyone' : 'buildmates';
+    $countParams = [];
+    $conditions = [];
+
+    if ($feedType === 'buildmates') {
+        if ($viewerUserId === null) {
+            $conditions[] = '1 = 0';
+        } else {
+            $countParams['viewer_buildmates_author'] = $viewerUserId;
+            $countParams['viewer_requester'] = $viewerUserId;
+            $countParams['viewer_addressee'] = $viewerUserId;
+            $countParams['viewer_project_owner_count'] = $viewerUserId;
+            $conditions[] = '(
+                post.user_id = :viewer_buildmates_author
+                OR EXISTS (
+                    SELECT 1
+                    FROM buildmates AS accepted
+                    WHERE accepted.status = \'accepted\'
+                      AND (
+                        (accepted.requester_id = :viewer_requester AND accepted.addressee_id = post.user_id)
+                        OR (accepted.addressee_id = :viewer_addressee AND accepted.requester_id = post.user_id)
+                      )
+                )
+            )';
+            $conditions[] = '(
+                post.project_id IS NULL
+                OR project.is_public = 1
+                OR post.user_id = :viewer_project_owner_count
+            )';
+        }
+    } else {
+        $conditions[] = '(post.project_id IS NULL OR project.is_public = 1)';
     }
 
-    $countStatement = $pdo->query('SELECT COUNT(*) FROM community_posts');
+    $where = implode(' AND ', $conditions);
+    $countStatement = $pdo->prepare(
+        'SELECT COUNT(*)
+         FROM community_posts AS post
+         LEFT JOIN projects AS project ON project.id = post.project_id
+         WHERE ' . $where
+    );
+    $countStatement->execute($countParams);
     $total = (int) $countStatement->fetchColumn();
+
+    $feedParams = $countParams;
+    $likeColumn = ', 0 AS viewer_liked';
+    $projectIdColumn = ', CASE
+        WHEN post.project_id IS NULL THEN NULL
+        WHEN project.is_public = 1 THEN post.project_id
+        ELSE NULL
+    END AS project_id';
+    $projectMetadataColumns = ',
+        CASE WHEN post.project_id IS NULL OR project.is_public = 1 THEN project.title ELSE NULL END AS project_title,
+        CASE WHEN post.project_id IS NULL OR project.is_public = 1 THEN project.description ELSE NULL END AS project_description,
+        CASE WHEN post.project_id IS NULL OR project.is_public = 1 THEN project.technologies ELSE NULL END AS project_technologies,
+        CASE
+            WHEN post.project_id IS NULL OR project.is_public != 1 THEN NULL
+            ELSE (SELECT image.image_path FROM project_images AS image
+                  WHERE image.project_id = project.id ORDER BY image.id ASC LIMIT 1)
+        END AS project_cover';
+
+    if ($viewerUserId !== null) {
+        $feedParams['viewer_like'] = $viewerUserId;
+        $feedParams['viewer_project_id'] = $viewerUserId;
+        $feedParams['viewer_project_title'] = $viewerUserId;
+        $feedParams['viewer_project_description'] = $viewerUserId;
+        $feedParams['viewer_project_technologies'] = $viewerUserId;
+        $feedParams['viewer_project_cover'] = $viewerUserId;
+        $likeColumn = ', (SELECT COUNT(*) FROM post_likes AS vl
+                         WHERE vl.post_id = post.id AND vl.user_id = :viewer_like) AS viewer_liked';
+        $projectIdColumn = ', CASE
+            WHEN post.project_id IS NULL THEN NULL
+            WHEN project.is_public = 1 THEN post.project_id
+            WHEN post.user_id = :viewer_project_id THEN post.project_id
+            ELSE NULL
+        END AS project_id';
+        $projectMetadataColumns = ',
+            CASE
+                WHEN post.project_id IS NULL THEN NULL
+                WHEN project.is_public = 1 THEN project.title
+                WHEN post.user_id = :viewer_project_title THEN project.title
+                ELSE NULL
+            END AS project_title,
+            CASE
+                WHEN post.project_id IS NULL THEN NULL
+                WHEN project.is_public = 1 THEN project.description
+                WHEN post.user_id = :viewer_project_description THEN project.description
+                ELSE NULL
+            END AS project_description,
+            CASE
+                WHEN post.project_id IS NULL THEN NULL
+                WHEN project.is_public = 1 THEN project.technologies
+                WHEN post.user_id = :viewer_project_technologies THEN project.technologies
+                ELSE NULL
+            END AS project_technologies,
+            CASE
+                WHEN post.project_id IS NULL THEN NULL
+                WHEN project.is_public = 1 THEN (SELECT image.image_path FROM project_images AS image
+                    WHERE image.project_id = project.id ORDER BY image.id ASC LIMIT 1)
+                WHEN post.user_id = :viewer_project_cover THEN (SELECT image.image_path FROM project_images AS image
+                    WHERE image.project_id = project.id ORDER BY image.id ASC LIMIT 1)
+                ELSE NULL
+            END AS project_cover';
+    }
 
     $sql = 'SELECT
                 post.id,
                 post.user_id,
                 post.body,
                 post.post_type,
-                post.project_id,
                 post.created_at,
                 user.username,
                 user.display_name,
                 user.avatar_url,
-                user.professional_role,
-                project.title AS project_title,
+                user.professional_role
+                ' . $projectIdColumn . '
+                ' . $projectMetadataColumns . ',
                 (SELECT COUNT(*) FROM post_likes AS pl WHERE pl.post_id = post.id) AS like_count
                 ' . $likeColumn . '
             FROM community_posts AS post
             INNER JOIN users AS user ON user.id = post.user_id
             LEFT JOIN projects AS project ON project.id = post.project_id
+            WHERE ' . $where . '
             ORDER BY post.created_at DESC, post.id DESC
             LIMIT :lim OFFSET :off';
 
     $statement = $pdo->prepare($sql);
-    foreach ($params as $key => $value) {
+    foreach ($feedParams as $key => $value) {
         $statement->bindValue(':' . $key, $value, PDO::PARAM_INT);
     }
     $statement->bindValue(':lim', $limit, PDO::PARAM_INT);
@@ -152,30 +245,72 @@ function community_fetch_user_posts(PDO $pdo, int $userId, int $limit = 20, int 
         $params['viewer_id'] = $viewerUserId;
     }
 
+    $visibilityCondition = $viewerUserId === $userId
+        ? '1 = 1'
+        : '(post.project_id IS NULL OR project.is_public = 1)';
+
     $countStatement = $pdo->prepare(
-        'SELECT COUNT(*) FROM community_posts WHERE user_id = :uid'
+        'SELECT COUNT(*)
+         FROM community_posts AS post
+         LEFT JOIN projects AS project ON project.id = post.project_id
+         WHERE post.user_id = :uid AND ' . $visibilityCondition
     );
     $countStatement->execute(['uid' => $userId]);
     $total = (int) $countStatement->fetchColumn();
+
+    $projectMetadataColumns = $viewerUserId === $userId
+        ? ', CASE WHEN post.project_id IS NULL THEN NULL ELSE post.project_id END AS project_id,
+           CASE WHEN post.project_id IS NULL THEN NULL ELSE project.title END AS project_title,
+           CASE WHEN post.project_id IS NULL THEN NULL ELSE project.description END AS project_description,
+           CASE WHEN post.project_id IS NULL THEN NULL ELSE project.technologies END AS project_technologies,
+           CASE WHEN post.project_id IS NULL THEN NULL ELSE (
+               SELECT image.image_path FROM project_images AS image
+               WHERE image.project_id = project.id ORDER BY image.id ASC LIMIT 1
+           ) END AS project_cover'
+        : ', CASE
+               WHEN post.project_id IS NULL THEN NULL
+               WHEN project.is_public = 1 THEN post.project_id
+               ELSE NULL
+           END AS project_id,
+           CASE
+               WHEN post.project_id IS NULL THEN NULL
+               WHEN project.is_public = 1 THEN project.title
+               ELSE NULL
+           END AS project_title,
+           CASE
+               WHEN post.project_id IS NULL THEN NULL
+               WHEN project.is_public = 1 THEN project.description
+               ELSE NULL
+           END AS project_description,
+           CASE
+               WHEN post.project_id IS NULL THEN NULL
+               WHEN project.is_public = 1 THEN project.technologies
+               ELSE NULL
+           END AS project_technologies,
+           CASE
+               WHEN post.project_id IS NULL OR project.is_public != 1 THEN NULL
+               ELSE (SELECT image.image_path FROM project_images AS image
+                     WHERE image.project_id = project.id ORDER BY image.id ASC LIMIT 1)
+           END AS project_cover';
 
     $sql = 'SELECT
                 post.id,
                 post.user_id,
                 post.body,
                 post.post_type,
-                post.project_id,
                 post.created_at,
                 user.username,
                 user.display_name,
                 user.avatar_url,
                 user.professional_role,
-                project.title AS project_title,
+                ' . ltrim($projectMetadataColumns, ',') . ',
                 (SELECT COUNT(*) FROM post_likes AS pl WHERE pl.post_id = post.id) AS like_count
                 ' . $likeColumn . '
             FROM community_posts AS post
             INNER JOIN users AS user ON user.id = post.user_id
             LEFT JOIN projects AS project ON project.id = post.project_id
             WHERE post.user_id = :profile_user_id
+              AND ' . $visibilityCondition . '
             ORDER BY post.created_at DESC, post.id DESC
             LIMIT :lim OFFSET :off';
 
@@ -425,6 +560,23 @@ function community_fetch_builders_to_discover(PDO $pdo, int $limit = 5, ?int $ex
 
 function community_search_developers(PDO $pdo, string $query, int $limit = 12): array
 {
+    $query = trim($query);
+    if (str_starts_with($query, '@')) {
+        $query = substr($query, 1);
+    }
+    $query = trim($query);
+
+    if ($query === '') {
+        return [];
+    }
+
+    $escapedQuery = str_replace(
+        ['!', '%', '_'],
+        ['!!', '!%', '!_'],
+        $query
+    );
+    $pattern = '%' . $escapedQuery . '%';
+
     $statement = $pdo->prepare(
         'SELECT
             user.id,
@@ -433,14 +585,25 @@ function community_search_developers(PDO $pdo, string $query, int $limit = 12): 
             user.professional_role,
             user.avatar_url
         FROM users AS user
-        WHERE user.username LIKE :q
-           OR user.display_name LIKE :q2
-        ORDER BY user.username ASC
+        WHERE LOWER(user.username) = LOWER(:exact_username)
+           OR LOWER(user.display_name) = LOWER(:exact_display_name)
+           OR user.username LIKE :username_partial ESCAPE \'!\'
+           OR user.display_name LIKE :display_name_partial ESCAPE \'!\'
+        ORDER BY
+            CASE
+                WHEN LOWER(user.username) = LOWER(:order_exact_username) THEN 0
+                WHEN LOWER(user.display_name) = LOWER(:order_exact_display_name) THEN 1
+                ELSE 2
+            END,
+            user.username ASC
         LIMIT :lim'
     );
-    $pattern = '%' . $query . '%';
-    $statement->bindValue(':q', $pattern);
-    $statement->bindValue(':q2', $pattern);
+    $statement->bindValue(':exact_username', $query);
+    $statement->bindValue(':exact_display_name', $query);
+    $statement->bindValue(':username_partial', $pattern);
+    $statement->bindValue(':display_name_partial', $pattern);
+    $statement->bindValue(':order_exact_username', $query);
+    $statement->bindValue(':order_exact_display_name', $query);
     $statement->bindValue(':lim', $limit, PDO::PARAM_INT);
     $statement->execute();
     return $statement->fetchAll();

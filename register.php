@@ -19,7 +19,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         http_response_code(400);
         $errorMessage = 'Your session expired. Refresh the page and try again.';
     } elseif (!preg_match('/\A[A-Za-z0-9_-]{3,50}\z/', $username)) {
-        $errorMessage = 'Username must be 3–50 characters using letters, numbers, underscores, or hyphens.';
+        $errorMessage = 'Brick ID must be 3–50 characters using letters, numbers, underscores, or hyphens.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100) {
         $errorMessage = 'Enter a valid email address no longer than 100 characters.';
     } elseif (strlen($password) < 12) {
@@ -55,7 +55,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $sqlState = (string) ($exception->errorInfo[0] ?? $exception->getCode());
 
                 if ($sqlState === '23000') {
-                    $errorMessage = 'That username or email address is already in use.';
+                    $errorMessage = 'That Brick ID or email address is already in use.';
                 } else {
                     error_log('BrickLab account creation failed: ' . $exception->getMessage());
                     http_response_code(500);
@@ -83,7 +83,7 @@ require __DIR__ . '/includes/auth-header.php';
             <form class="auth-form" method="post" action="/bricklab/register.php">
                 <input type="hidden" name="_csrf" value="<?= escape_html(csrf_token()) ?>">
 
-                <label for="username">Username</label>
+                <label for="username">Brick ID</label>
                 <input
                     id="username"
                     name="username"

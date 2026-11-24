@@ -52,6 +52,7 @@ function fetch_owned_project(PDO $pdo, int $projectId, int $userId): array|false
             p.github_url,
             p.live_demo_url,
             p.is_public,
+            p.visibility,
             p.created_at,
             p.updated_at,
             (
@@ -80,6 +81,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         http_response_code(400);
         $errors[] = 'Your session expired. Refresh the page and try again.';
     } elseif ($action === 'create' || $action === 'update') {
+        $submittedIsPublic = array_key_exists('is_public', $_POST)
+            ? $_POST['is_public']
+            : '0';
+        $isPublicValueValid = is_string($submittedIsPublic)
+            && in_array($submittedIsPublic, ['0', '1'], true);
+        if (!$isPublicValueValid) {
+            $errors[] = 'Choose a valid project visibility.';
+        }
+
         $formValues = [
             'title' => trim(request_string($_POST['title'] ?? null)),
             'description' => trim(request_string($_POST['description'] ?? null)),
@@ -88,8 +98,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             'technologies' => trim(request_string($_POST['technologies'] ?? null)),
             'github_url' => trim(request_string($_POST['github_url'] ?? null)),
             'live_demo_url' => trim(request_string($_POST['live_demo_url'] ?? null)),
-            'is_public' => ($_POST['is_public'] ?? null) === '1' ? '1' : '0',
+            'is_public' => $isPublicValueValid ? $submittedIsPublic : '0',
         ];
+        $formVisibility = $formValues['is_public'] === '1' ? 'public' : 'private';
 
         $titleLength = project_text_length($formValues['title']);
         $descriptionLength = project_text_length($formValues['description']);
@@ -247,7 +258,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                             technologies,
                             github_url,
                             live_demo_url,
-                            is_public
+                            is_public,
+                            visibility
                         )
                         VALUES (
                             :user_id,
@@ -258,7 +270,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                             :technologies,
                             :github_url,
                             :live_demo_url,
-                            :is_public
+                            :is_public,
+                            :visibility
                         )'
                     );
                     $statement->execute([
@@ -277,6 +290,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                             ? null
                             : $formValues['live_demo_url'],
                         'is_public' => $formValues['is_public'],
+                        'visibility' => $formVisibility,
                     ]);
 
                     $newProjectId = (int) $pdo->lastInsertId();
@@ -310,7 +324,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                                 technologies = :technologies,
                                 github_url = :github_url,
                                 live_demo_url = :live_demo_url,
-                                is_public = :is_public
+                                is_public = :is_public,
+                                visibility = :visibility
                             WHERE id = :id AND user_id = :user_id'
                         );
                         $statement->execute([
@@ -328,6 +343,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                                 ? null
                                 : $formValues['live_demo_url'],
                             'is_public' => $formValues['is_public'],
+                            'visibility' => $formVisibility,
                             'id' => $postedProjectId,
                             'user_id' => $userId,
                         ]);
@@ -393,40 +409,47 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $errors[] = 'That project could not be found.';
         } else {
             try {
-                $imageStmt = $pdo->prepare(
-                    'SELECT image_path FROM project_images WHERE project_id = :project_id'
-                );
-                $imageStmt->execute(['project_id' => $postedProjectId]);
-                $imagesToDelete = $imageStmt->fetchAll();
-                foreach ($imagesToDelete as $imgRow) {
-                    $path = (string) ($imgRow['image_path'] ?? '');
-                    if (str_starts_with($path, '/bricklab/uploads/projects/')) {
-                        $diskPath = __DIR__ . '/uploads/projects/' . basename($path);
-                        if (is_file($diskPath)) {
-                            @unlink($diskPath);
-                        }
-                    }
-                }
-
-                $statement = $pdo->prepare(
-                    'DELETE FROM projects WHERE id = :id AND user_id = :user_id'
-                );
-                $statement->execute([
-                    'id' => $postedProjectId,
-                    'user_id' => $userId,
-                ]);
-
-                if ($statement->rowCount() === 1) {
-                    set_flash_message(
-                        'success',
-                        'Your build and its related tasks and images have been deleted.'
+                $ownedProject = fetch_owned_project($pdo, $postedProjectId, $userId);
+                if ($ownedProject === false) {
+                    http_response_code(404);
+                    $errors[] = 'That project could not be found.';
+                } else {
+                    $imageStmt = $pdo->prepare(
+                        'SELECT image_path FROM project_images WHERE project_id = :project_id'
                     );
-                    header('Location: /bricklab/projects.php', true, 303);
-                    exit;
-                }
+                    $imageStmt->execute(['project_id' => $postedProjectId]);
+                    $imagesToDelete = $imageStmt->fetchAll();
 
-                http_response_code(404);
-                $errors[] = 'That project could not be found.';
+                    $statement = $pdo->prepare(
+                        'DELETE FROM projects WHERE id = :id AND user_id = :user_id'
+                    );
+                    $statement->execute([
+                        'id' => $postedProjectId,
+                        'user_id' => $userId,
+                    ]);
+
+                    if ($statement->rowCount() === 1) {
+                        foreach ($imagesToDelete as $imgRow) {
+                            $path = (string) ($imgRow['image_path'] ?? '');
+                            if (str_starts_with($path, '/bricklab/uploads/projects/')) {
+                                $diskPath = __DIR__ . '/uploads/projects/' . basename($path);
+                                if (is_file($diskPath)) {
+                                    @unlink($diskPath);
+                                }
+                            }
+                        }
+
+                        set_flash_message(
+                            'success',
+                            'Your build and its related tasks and images have been deleted.'
+                        );
+                        header('Location: /bricklab/projects.php', true, 303);
+                        exit;
+                    }
+
+                    http_response_code(404);
+                    $errors[] = 'That project could not be found.';
+                }
             } catch (PDOException $exception) {
                 error_log('BrickLab project deletion failed: ' . $exception->getMessage());
                 http_response_code(500);
@@ -478,7 +501,9 @@ if ($editId !== null) {
                     'technologies' => (string) ($editProject['technologies'] ?? ''),
                     'github_url' => (string) ($editProject['github_url'] ?? ''),
                     'live_demo_url' => (string) ($editProject['live_demo_url'] ?? ''),
-                    'is_public' => (int) ($editProject['is_public'] ?? 0) === 1 ? '1' : '0',
+                    'is_public' => ($editProject['visibility'] ?? null) !== null
+                        ? ($editProject['visibility'] === 'public' ? '1' : '0')
+                        : ((int) ($editProject['is_public'] ?? 0) === 1 ? '1' : '0'),
                 ];
             }
         }

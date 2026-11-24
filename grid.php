@@ -13,9 +13,16 @@ $userId = current_user_id();
 $posts = ['items' => [], 'total' => 0];
 $userBuilds = [];
 $searchQuery = trim(request_string($_GET['q'] ?? ''));
+if (str_starts_with($searchQuery, '@')) {
+    $searchQuery = trim(substr($searchQuery, 1));
+}
 $searchResults = null;
 $buildersToDiscover = [];
 $pendingBuildmateRequests = [];
+$feedType = request_string($_GET['feed'] ?? 'buildmates');
+if (!in_array($feedType, ['buildmates', 'everyone'], true)) {
+    $feedType = 'buildmates';
+}
 
 // Handle POST actions (publish build log, delete build log, like, buildmate toggle)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId !== null) {
@@ -27,12 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId !== null) {
     } elseif ($action === 'create_post') {
         $body = trim(request_string($_POST['body'] ?? ''));
         $postType = request_string($_POST['post_type'] ?? 'update');
-        $projectId = positive_integer($_POST['project_id'] ?? null);
+        $projectId = $postType === 'milestone'
+            ? positive_integer($_POST['project_id'] ?? null)
+            : null;
 
         if ($body === '' || strlen($body) > 2000) {
             set_flash_message('error', 'Build Log must be between 1 and 2,000 characters.');
         } elseif (!isset(community_post_type_options()[$postType])) {
             set_flash_message('error', 'Invalid Build Log type.');
+        } elseif ($postType === 'milestone' && $projectId === null) {
+            set_flash_message('error', 'Choose a Build to publish this Build Log.');
         } else {
             try {
                 community_create_post($pdo, $userId, $body, $postType, $projectId);
@@ -63,13 +74,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId !== null) {
         $postId = positive_integer($_POST['post_id'] ?? null);
         $body = trim(request_string($_POST['body'] ?? ''));
         $postType = request_string($_POST['post_type'] ?? 'update');
-        $projectId = positive_integer($_POST['project_id'] ?? null);
         if ($postId === null || $body === '' || strlen($body) > 2000) {
             set_flash_message('error', 'Build Log must be between 1 and 2,000 characters.');
         } elseif (!isset(community_post_type_options()[$postType])) {
             set_flash_message('error', 'Invalid Build Log type.');
         } else {
             try {
+                $existingPost = $pdo->prepare(
+                    'SELECT project_id FROM community_posts
+                     WHERE id = :post_id AND user_id = :user_id LIMIT 1'
+                );
+                $existingPost->execute(['post_id' => $postId, 'user_id' => $userId]);
+                $existingPostRow = $existingPost->fetch();
+                if ($existingPostRow === false) {
+                    set_flash_message('error', 'That Build Log could not be found.');
+                    header('Location: /bricklab/grid.php', true, 303);
+                    exit;
+                }
+                $projectId = positive_integer($existingPostRow['project_id']);
                 community_update_post($pdo, $postId, $userId, $body, $postType, $projectId);
                 set_flash_message('success', 'Build Log updated.');
             } catch (InvalidArgumentException $exception) {
@@ -145,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $userId !== null) {
 try {
     $pageSize = 20;
     $requestedPage = min(positive_integer($_GET['page'] ?? 1) ?? 1, 1000000);
-    $posts = community_fetch_feed($pdo, $pageSize, ($requestedPage - 1) * $pageSize, $userId);
+    $posts = community_fetch_feed($pdo, $pageSize, ($requestedPage - 1) * $pageSize, $userId, $feedType);
 
     if ($userId !== null) {
         $buildStmt = $pdo->prepare(
@@ -177,47 +199,9 @@ require __DIR__ . '/includes/public-header.php';
 ?>
     <section class="community-page public-container" aria-labelledby="grid-title">
         <div class="community-layout">
-            <!-- Left sidebar: Publish Build Log + Discover Builders -->
+            <!-- Left sidebar: Community navigation and discovery -->
             <aside class="community-sidebar">
-                <?php if ($userId !== null): ?>
-                    <div class="community-compose surface" data-community-compose>
-                        <p class="public-eyebrow">PUBLISH A BUILD LOG</p>
-                        <form method="post" action="/bricklab/grid.php" class="community-compose-form">
-                            <input type="hidden" name="_csrf" value="<?= escape_html(csrf_token()) ?>">
-                            <input type="hidden" name="action" value="create_post">
-                            <textarea
-                                name="body"
-                                maxlength="2000"
-                                rows="4"
-                                placeholder="What are you building or learning today?"
-                                required
-                                aria-label="Build Log content"
-                            ></textarea>
-                            <div class="community-compose-controls">
-                                <label>
-                                    <span>Log type</span>
-                                    <select name="post_type">
-                                        <?php foreach (community_post_type_options() as $value => $label): ?>
-                                            <option value="<?= escape_html($value) ?>"><?= escape_html(community_post_type_icon($value) . ' ' . $label) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </label>
-                                <?php if ($userBuilds !== []): ?>
-                                    <label>
-                                        <span>Link a Build</span>
-                                        <select name="project_id">
-                                            <option value="">General Update</option>
-                                            <?php foreach ($userBuilds as $build): ?>
-                                                <option value="<?= (int) $build['id'] ?>"><?= escape_html((string) $build['title']) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </label>
-                                <?php endif; ?>
-                            </div>
-                            <button class="btn btn-primary" type="submit">Publish Build Log</button>
-                        </form>
-                    </div>
-                <?php else: ?>
+                <?php if ($userId === null): ?>
                     <div class="community-join-cta surface">
                         <p class="public-eyebrow">ENTER THE GRID</p>
                         <h3>Join fellow Builders.</h3>
@@ -231,13 +215,13 @@ require __DIR__ . '/includes/public-header.php';
                     <p class="public-eyebrow">DISCOVER BUILDERS</p>
                     <form method="get" action="/bricklab/grid.php" class="community-search-form">
                         <label>
-                            <span>Search Builders by name or BrickID</span>
+                            <span>Search Builders by name or Brick ID</span>
                             <input
                                 type="search"
                                 name="q"
                                 maxlength="100"
                                 value="<?= escape_html($searchQuery) ?>"
-                                placeholder="@username or display name"
+                                placeholder="@Brick ID or display name"
                             >
                         </label>
                         <button class="btn btn-secondary" type="submit">Search</button>
@@ -267,7 +251,7 @@ require __DIR__ . '/includes/public-header.php';
                                         </span>
                                         <span class="community-search-info">
                                             <strong><?= escape_html($resultName) ?></strong>
-                                            <span>@<?= escape_html((string) $result['username']) ?></span>
+                                            <span><?= escape_html(community_format_brick_id((string) $result['username'])) ?></span>
                                         </span>
                                     </a>
                                 <?php endforeach; ?>
@@ -285,7 +269,74 @@ require __DIR__ . '/includes/public-header.php';
                         <h1 id="grid-title">Discover what's being <span>built.</span></h1>
                         <p class="community-feed-description">Grid Activity: Build Logs, project milestones, and updates from Builders.</p>
                     </div>
+                    <nav class="community-feed-selector" aria-label="Community feed">
+                        <a
+                            href="?feed=buildmates<?= $searchQuery !== '' ? '&q=' . urlencode($searchQuery) : '' ?>"
+                            class="community-feed-selector-link<?= $feedType === 'buildmates' ? ' active' : '' ?>"
+                            <?= $feedType === 'buildmates' ? 'aria-current="page"' : '' ?>
+                        >Buildmates</a>
+                        <a
+                            href="?feed=everyone<?= $searchQuery !== '' ? '&q=' . urlencode($searchQuery) : '' ?>"
+                            class="community-feed-selector-link<?= $feedType === 'everyone' ? ' active' : '' ?>"
+                            <?= $feedType === 'everyone' ? 'aria-current="page"' : '' ?>
+                        >Everyone</a>
+                    </nav>
                 </header>
+
+                <?php if ($userId !== null): ?>
+                    <div class="community-compose surface" data-community-compose>
+                        <h2>Share an update with The Grid</h2>
+                        <form method="post" action="/bricklab/grid.php" class="community-compose-form">
+                            <input type="hidden" name="_csrf" value="<?= escape_html(csrf_token()) ?>">
+                            <input type="hidden" name="action" value="create_post">
+
+                            <fieldset class="community-post-type-selector">
+                                <legend>Choose an update type</legend>
+                                <label class="community-post-type-option is-selected">
+                                    <input type="radio" name="post_type" value="milestone" checked>
+                                    <span class="community-post-type-copy">
+                                        <strong>Build Log</strong>
+                                        <span>Share progress on one of your Builds.</span>
+                                    </span>
+                                </label>
+                                <label class="community-post-type-option">
+                                    <input type="radio" name="post_type" value="update">
+                                    <span class="community-post-type-copy">
+                                        <strong>Builder Update</strong>
+                                        <span>Share something with The Grid.</span>
+                                    </span>
+                                </label>
+                            </fieldset>
+
+                            <textarea
+                                name="body"
+                                maxlength="2000"
+                                rows="4"
+                                placeholder="What are you building today?"
+                                required
+                                aria-label="Community update content"
+                            ></textarea>
+
+                            <div class="community-project-selector" data-community-project-selector>
+                                <?php if ($userBuilds !== []): ?>
+                                    <label for="community-project-id">Linked Build</label>
+                                    <select name="project_id" id="community-project-id" required>
+                                        <option value="">Choose a Build</option>
+                                        <?php foreach ($userBuilds as $build): ?>
+                                            <option value="<?= (int) $build['id'] ?>"><?= escape_html((string) $build['title']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php else: ?>
+                                    <p class="community-project-selector-empty">
+                                        Choose an existing Build or <a href="/bricklab/projects.php">start a Build</a> first.
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+
+                            <button class="btn btn-primary" type="submit">Publish update</button>
+                        </form>
+                    </div>
+                <?php endif; ?>
 
                 <?php if ($flash !== null): ?>
                     <p class="form-notice form-notice-<?= escape_html($flash['type']) ?>" role="status"><?= escape_html($flash['message']) ?></p>
@@ -303,11 +354,11 @@ require __DIR__ . '/includes/public-header.php';
                     <?php if ($totalPages > 1): ?>
                         <nav class="showcase-pagination" aria-label="Feed pages">
                             <?php if ($currentPage > 1): ?>
-                                <a class="btn btn-secondary" href="?page=<?= $currentPage - 1 ?><?= $searchQuery !== '' ? '&q=' . urlencode($searchQuery) : '' ?>">Previous</a>
+                                <a class="btn btn-secondary" href="?feed=<?= escape_html($feedType) ?>&page=<?= $currentPage - 1 ?><?= $searchQuery !== '' ? '&q=' . urlencode($searchQuery) : '' ?>">Previous</a>
                             <?php endif; ?>
                             <span>Page <?= $currentPage ?> of <?= $totalPages ?></span>
                             <?php if ($currentPage < $totalPages): ?>
-                                <a class="btn btn-secondary" href="?page=<?= $currentPage + 1 ?><?= $searchQuery !== '' ? '&q=' . urlencode($searchQuery) : '' ?>">
+                                <a class="btn btn-secondary" href="?feed=<?= escape_html($feedType) ?>&page=<?= $currentPage + 1 ?><?= $searchQuery !== '' ? '&q=' . urlencode($searchQuery) : '' ?>">
                                     More Build Logs <span aria-hidden="true">→</span>
                                 </a>
                             <?php endif; ?>
@@ -316,10 +367,19 @@ require __DIR__ . '/includes/public-header.php';
                 <?php else: ?>
                     <div class="public-empty-state surface">
                         <span class="public-empty-mark" aria-hidden="true"></span>
-                        <h3>The Grid is just getting started</h3>
-                        <p>Be the first Builder to share what you're creating, learning, or releasing.</p>
-                        <?php if ($userId === null): ?>
-                            <a class="btn btn-primary" href="/bricklab/register.php">Become a Builder</a>
+                        <?php if ($feedType === 'buildmates'): ?>
+                            <h3>Your Grid is quiet for now.</h3>
+                            <p>Connect with other Builders to see what they're creating and sharing.</p>
+                            <a class="btn btn-secondary" href="/bricklab/grid.php?feed=everyone">View Everyone</a>
+                            <?php if ($userId !== null): ?>
+                                <a class="btn btn-primary" href="/bricklab/grid.php?q=">Discover Builders</a>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <h3>The Grid is just getting started</h3>
+                            <p>Be the first Builder to share what you're creating, learning, or releasing.</p>
+                            <?php if ($userId === null): ?>
+                                <a class="btn btn-primary" href="/bricklab/register.php">Become a Builder</a>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
@@ -346,7 +406,7 @@ require __DIR__ . '/includes/public-header.php';
                                     </span>
                                     <div class="builder-discover-copy">
                                         <strong><?= escape_html($dName) ?></strong>
-                                        <span>@<?= escape_html((string) $discoverBuilder['username']) ?></span>
+                                        <span><?= escape_html(community_format_brick_id((string) $discoverBuilder['username'])) ?></span>
                                     </div>
                                     <span class="builder-discover-builds"><?= (int) $discoverBuilder['build_count'] ?> <?= (int) $discoverBuilder['build_count'] === 1 ? 'Build' : 'Builds' ?></span>
                                 </a>
@@ -364,7 +424,7 @@ require __DIR__ . '/includes/public-header.php';
                                 <div class="builder-discover-item">
                                     <div class="builder-discover-copy">
                                         <strong><?= escape_html($requestName) ?></strong>
-                                        <span>@<?= escape_html((string) $request['username']) ?></span>
+                                        <span><?= escape_html(community_format_brick_id((string) $request['username'])) ?></span>
                                     </div>
                                     <form method="post" action="/bricklab/grid.php" class="buildmate-request-actions">
                                         <input type="hidden" name="_csrf" value="<?= escape_html(csrf_token()) ?>">

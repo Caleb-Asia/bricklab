@@ -244,7 +244,7 @@ require __DIR__ . '/includes/public-header.php';
                 <div class="profile-identity-copy">
                     <p class="public-eyebrow">A BRICKLAB BUILDER</p>
                     <h1><?= escape_html($profileName) ?></h1>
-                    <p class="profile-username">@<?= escape_html((string) $profile['username']) ?></p>
+                    <p class="profile-username"><span>Brick ID</span> <?= escape_html('@' . ltrim((string) $profile['username'], '@')) ?></p>
                     <?php if (trim((string) ($profile['professional_role'] ?? '')) !== ''): ?>
                         <p class="profile-role"><?= escape_html((string) $profile['professional_role']) ?></p>
                     <?php endif; ?>

@@ -11,19 +11,22 @@ $postAvatar = showcase_safe_image_source(
     isset($post['avatar_url']) ? (string) $post['avatar_url'] : null
 );
 $hasLinkedBuild = trim((string) ($post['project_title'] ?? '')) !== '';
+$projectId = positive_integer($post['project_id'] ?? null);
 $postType = (string) $post['post_type'];
 
 if ($hasLinkedBuild && $postType === 'update') {
-    $postTypeLabel = 'Project Build Log';
+    $postTypeLabel = 'Build Log';
 } else {
     $postTypeLabel = community_post_type_label($postType);
 }
 
-$postTypeIcon = community_post_type_icon($postType);
 $timeAgo = community_time_ago((string) $post['created_at']);
 $likeCount = (int) ($post['like_count'] ?? 0);
 $viewerLiked = (int) ($post['viewer_liked'] ?? 0) > 0;
 $isOwnPost = $userId !== null && (int) $post['user_id'] === $userId;
+$brickId = community_format_brick_id((string) $post['username']);
+$projectTechnologies = showcase_parse_tags((string) ($post['project_technologies'] ?? ''));
+$projectCover = showcase_safe_image_source(isset($post['project_cover']) ? (string) $post['project_cover'] : null);
 ?>
 <article class="community-post surface" data-post-id="<?= (int) $post['id'] ?>">
     <div class="community-post-header">
@@ -37,11 +40,11 @@ $isOwnPost = $userId !== null && (int) $post['user_id'] === $userId;
         <div class="community-post-meta">
             <a class="community-post-author" href="/bricklab/u/<?= rawurlencode((string) $post['username']) ?>">
                 <strong><?= escape_html($postAuthorName) ?></strong>
-                <span>@<?= escape_html((string) $post['username']) ?></span>
+                <span class="community-post-brick-id"><?= escape_html($brickId) ?></span>
             </a>
             <div class="community-post-meta-line">
                 <span class="community-post-type" data-type="<?= escape_html($postType) ?>">
-                    <?= $postTypeIcon ?> <?= escape_html($postTypeLabel) ?>
+                    <?= escape_html($postTypeLabel) ?>
                 </span>
                 <span class="community-post-time"><?= escape_html($timeAgo) ?></span>
             </div>
@@ -79,11 +82,31 @@ $isOwnPost = $userId !== null && (int) $post['user_id'] === $userId;
     <div class="community-post-body">
         <p><?= nl2br(escape_html((string) $post['body'])) ?></p>
     </div>
-    <?php if ($hasLinkedBuild): ?>
-        <div class="community-post-project">
-            <span class="community-post-project-icon" aria-hidden="true">📦</span>
-            <span>Linked Build: <strong><?= escape_html((string) $post['project_title']) ?></strong></span>
-        </div>
+    <?php if ($hasLinkedBuild && $projectId !== null): ?>
+        <a class="community-build-preview" href="/bricklab/build.php?id=<?= $projectId ?>">
+            <div class="community-build-preview-cover" aria-hidden="true">
+                <?php if ($projectCover !== null): ?>
+                    <img src="<?= escape_html($projectCover) ?>" alt="" loading="lazy">
+                <?php else: ?>
+                    <img src="/bricklab/assets/images/bricklab-project-placeholder.webp" alt="" loading="lazy">
+                <?php endif; ?>
+            </div>
+            <div class="community-build-preview-copy">
+                <p class="community-build-preview-label">Build Log</p>
+                <h3><?= escape_html((string) $post['project_title']) ?></h3>
+                <?php if (trim((string) ($post['project_description'] ?? '')) !== ''): ?>
+                    <p class="community-build-preview-description"><?= escape_html((string) $post['project_description']) ?></p>
+                <?php endif; ?>
+                <?php if ($projectTechnologies !== []): ?>
+                    <ul class="community-build-preview-tags" aria-label="Technologies">
+                        <?php foreach (array_slice($projectTechnologies, 0, 4) as $technology): ?>
+                            <li><?= escape_html($technology) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                <span class="community-build-preview-link">View Build <span aria-hidden="true">↗</span></span>
+            </div>
+        </a>
     <?php endif; ?>
     <div class="community-post-actions">
         <?php if ($userId !== null): ?>

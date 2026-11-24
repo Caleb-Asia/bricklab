@@ -60,7 +60,7 @@ $projectTechnologies = showcase_parse_tags((string) ($project['technologies'] ??
             </a>
             <a href="/bricklab/u/<?= rawurlencode((string) $project['username']) ?>">
                 <?= escape_html($projectOwnerName) ?>
-                <span>@<?= escape_html((string) $project['username']) ?></span>
+                <span><?= escape_html('@' . ltrim((string) $project['username'], '@')) ?></span>
             </a>
         </div>
         <div class="showcase-project-links">

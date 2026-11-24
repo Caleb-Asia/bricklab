@@ -152,4 +152,37 @@ document.addEventListener("DOMContentLoaded", () => {
             composeTextarea.style.height = Math.max(90, composeTextarea.scrollHeight) + "px";
         });
     }
+
+    // ------------------------------------------
+    // Build Log / Builder Update composer selector
+    // ------------------------------------------
+    const postTypeOptions = document.querySelectorAll(".community-post-type-option");
+    const projectSelector = document.querySelector("[data-community-project-selector]");
+    const projectSelect = projectSelector?.querySelector("select");
+
+    const syncComposerType = (postType) => {
+        postTypeOptions.forEach((option) => {
+            const radio = option.querySelector('input[name="post_type"]');
+            option.classList.toggle("is-selected", radio?.value === postType);
+        });
+
+        const isBuildLog = postType === "milestone";
+        if (projectSelector) {
+            projectSelector.hidden = !isBuildLog;
+        }
+        if (projectSelect) {
+            projectSelect.disabled = !isBuildLog;
+            projectSelect.required = isBuildLog;
+        }
+    };
+
+    postTypeOptions.forEach((option) => {
+        const radio = option.querySelector('input[name="post_type"]');
+        radio?.addEventListener("change", () => {
+            if (radio.checked) syncComposerType(radio.value);
+        });
+    });
+
+    const selectedPostType = document.querySelector('.community-post-type-option input[name="post_type"]:checked');
+    syncComposerType(selectedPostType?.value || "milestone");
 });
