@@ -3,6 +3,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_authentication();
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/showcase.php';
 
 $pageTitle = 'Dashboard';
 $currentPage = 'dashboard';
@@ -202,10 +203,31 @@ try {
 
     if ($dashboardStats['total_builds'] > 0) {
         $statement = $pdo->prepare(
-            'SELECT id, title, description, status
-            FROM projects
-            WHERE user_id = :user_id
-            ORDER BY created_at DESC, id DESC
+            'SELECT
+                project.id,
+                project.title,
+                project.description,
+                project.status,
+                COALESCE(task_progress.total_tasks, 0) AS total_tasks,
+                COALESCE(task_progress.completed_tasks, 0) AS completed_tasks,
+                (
+                    SELECT image.image_path
+                    FROM project_images AS image
+                    WHERE image.project_id = project.id
+                    ORDER BY image.id ASC
+                    LIMIT 1
+                ) AS cover_image
+            FROM projects AS project
+            LEFT JOIN (
+                SELECT
+                    project_id,
+                    COUNT(*) AS total_tasks,
+                    SUM(CASE WHEN status = \'completed\' THEN 1 ELSE 0 END) AS completed_tasks
+                FROM tasks
+                GROUP BY project_id
+            ) AS task_progress ON task_progress.project_id = project.id
+            WHERE project.user_id = :user_id
+            ORDER BY project.created_at DESC, project.id DESC
             LIMIT 3'
         );
         $statement->execute(['user_id' => $userId]);
@@ -214,52 +236,22 @@ try {
 
     $statement = $pdo->prepare(
         'SELECT
-            task_activity.task_id,
-            task_activity.project_id,
-            task_activity.task_title,
-            task_activity.project_title,
-            task_activity.activity_type,
-            task_activity.activity_at
-        FROM (
-            SELECT
-                task.id AS task_id,
-                project.id AS project_id,
-                task.title AS task_title,
-                project.title AS project_title,
-                \'created\' AS activity_type,
-                task.created_at AS activity_at
-            FROM tasks AS task
-            INNER JOIN projects AS project ON project.id = task.project_id
-            WHERE project.user_id = :created_user_id
-
-            UNION ALL
-
-            SELECT
-                task.id AS task_id,
-                project.id AS project_id,
-                task.title AS task_title,
-                project.title AS project_title,
-                \'completed\' AS activity_type,
-                task.completed_at AS activity_at
-            FROM tasks AS task
-            INNER JOIN projects AS project ON project.id = task.project_id
-            WHERE project.user_id = :completed_user_id
-                AND task.status = \'completed\'
-                AND task.completed_at IS NOT NULL
-        ) AS task_activity
-        ORDER BY
-            task_activity.activity_at DESC,
-            CASE task_activity.activity_type
-                WHEN \'completed\' THEN 0
-                ELSE 1
-            END,
-            task_activity.task_id DESC
+            task.id AS task_id,
+            project.id AS project_id,
+            task.title AS task_title,
+            project.title AS project_title,
+            task.status,
+            task.created_at,
+            task.completed_at,
+            CASE WHEN task.status = \'completed\' THEN \'completed\' ELSE \'created\' END AS activity_type,
+            CASE WHEN task.status = \'completed\' THEN task.completed_at ELSE task.created_at END AS activity_at
+        FROM tasks AS task
+        INNER JOIN projects AS project ON project.id = task.project_id
+        WHERE project.user_id = :user_id
+        ORDER BY activity_at DESC, task.id DESC
         LIMIT 10'
     );
-    $statement->execute([
-        'created_user_id' => $userId,
-        'completed_user_id' => $userId,
-    ]);
+    $statement->execute(['user_id' => $userId]);
     $dashboardTaskHistory = $statement->fetchAll();
 } catch (PDOException $exception) {
     error_log('BrickLab dashboard data could not be loaded: ' . $exception->getMessage());
@@ -358,7 +350,7 @@ require_once __DIR__ . '/includes/header.php';
                     <span>Group by</span>
                     <select data-chart-period aria-label="Group activity by">
                         <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
+                        <option value="monthly" selected>Monthly</option>
                     </select>
                 </label>
             </div>
@@ -399,6 +391,14 @@ require_once __DIR__ . '/includes/header.php';
         </div>
 
         <aside class="dashboard-statistics" aria-label="Build and task statistics">
+            <?php
+            $buildWeeklyValues = $dashboardChartData['buildActivity']['weekly']['values'];
+            $taskWeeklyValues = $dashboardChartData['taskCompletionActivity']['weekly']['values'];
+            $buildsThisWeek = (int) ($buildWeeklyValues[array_key_last($buildWeeklyValues)] ?? 0);
+            $tasksCompletedThisWeek = (int) ($taskWeeklyValues[array_key_last($taskWeeklyValues)] ?? 0);
+            $buildSparkMax = max(1, ...$buildWeeklyValues);
+            $taskSparkMax = max(1, ...$taskWeeklyValues);
+            ?>
             <button
                 class="stat-card dashboard-stat-button"
                 type="button"
@@ -411,6 +411,13 @@ require_once __DIR__ . '/includes/header.php';
                     <span class="stat-icon purple-icon" aria-hidden="true">
                         <i data-lucide="blocks">•</i>
                     </span>
+                </span>
+                <span class="dashboard-stat-sparkline" aria-hidden="true">
+                    <?php foreach ($buildWeeklyValues as $value): ?>
+                        <span style="--spark-height: <?= (int) $value > 0
+                            ? max(8, (int) round(((int) $value / $buildSparkMax) * 100))
+                            : 0 ?>%"></span>
+                    <?php endforeach; ?>
                 </span>
                 <span class="dashboard-stat-list">
                     <span class="dashboard-stat-item">
@@ -425,6 +432,9 @@ require_once __DIR__ . '/includes/header.php';
                         <span>Completed</span>
                         <strong><?= $dashboardStats['completed_builds'] ?></strong>
                     </span>
+                </span>
+                <span class="dashboard-stat-trend">
+                    <?= $buildsThisWeek > 0 ? '+' . $buildsThisWeek . ' this week' : 'No new builds this week' ?>
                 </span>
                 <span class="dashboard-stat-hint">Click to view build charts</span>
             </button>
@@ -442,6 +452,13 @@ require_once __DIR__ . '/includes/header.php';
                         <i data-lucide="list-checks">•</i>
                     </span>
                 </span>
+                <span class="dashboard-stat-sparkline dashboard-stat-sparkline-tasks" aria-hidden="true">
+                    <?php foreach ($taskWeeklyValues as $value): ?>
+                        <span style="--spark-height: <?= (int) $value > 0
+                            ? max(8, (int) round(((int) $value / $taskSparkMax) * 100))
+                            : 0 ?>%"></span>
+                    <?php endforeach; ?>
+                </span>
                 <span class="dashboard-stat-list">
                     <span class="dashboard-stat-item">
                         <span>Total tasks</span>
@@ -455,6 +472,11 @@ require_once __DIR__ . '/includes/header.php';
                         <span>Completed</span>
                         <strong><?= $dashboardTaskStats['completed_tasks'] ?></strong>
                     </span>
+                </span>
+                <span class="dashboard-stat-trend dashboard-stat-trend-tasks">
+                    <?= $tasksCompletedThisWeek > 0
+                        ? '+' . $tasksCompletedThisWeek . ' completed this week'
+                        : 'No tasks completed this week' ?>
                 </span>
                 <span class="dashboard-stat-hint">Click to view task charts</span>
             </button>
@@ -511,8 +533,26 @@ require_once __DIR__ . '/includes/header.php';
                 ? $projectStatus
                 : 'unknown';
             $statusLabel = $dashboardStatusOptions[$projectStatus] ?? 'Status unavailable';
+            $totalTasks = (int) $project['total_tasks'];
+            $completedTasks = (int) $project['completed_tasks'];
+            $progressPercent = $totalTasks > 0
+                ? (int) round(($completedTasks / $totalTasks) * 100)
+                : 0;
+            $projectCover = showcase_safe_image_source(
+                isset($project['cover_image']) ? (string) $project['cover_image'] : null
+            );
             ?>
-            <article class="project-card surface">
+            <article class="project-card surface dashboard-project-card dashboard-project-card-<?= escape_html($statusClass) ?>">
+                <?php if ($projectCover !== null): ?>
+                    <img class="project-card-cover" src="<?= escape_html($projectCover) ?>" alt="" loading="lazy">
+                <?php else: ?>
+                    <img
+                        class="project-card-cover project-card-cover-fallback"
+                        src="/bricklab/assets/images/bricklab-project-placeholder.webp"
+                        alt=""
+                        loading="lazy"
+                    >
+                <?php endif; ?>
                 <span class="project-status status-<?= escape_html($statusClass) ?>">
                     <?= escape_html($statusLabel) ?>
                 </span>
@@ -522,6 +562,26 @@ require_once __DIR__ . '/includes/header.php';
                         ? 'No description added yet.'
                         : nl2br(escape_html((string) $project['description'])) ?>
                 </p>
+                <div class="dashboard-project-progress">
+                    <div class="dashboard-project-progress-heading">
+                        <span><?= $totalTasks === 0 ? 'Task progress' : 'Tasks completed' ?></span>
+                        <strong><?= $totalTasks === 0 ? 'No tasks yet' : $completedTasks . ' / ' . $totalTasks ?></strong>
+                    </div>
+                    <?php if ($totalTasks > 0): ?>
+                        <div
+                            class="dashboard-project-progress-track"
+                            role="progressbar"
+                            aria-label="Task completion for <?= escape_html((string) $project['title']) ?>"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="<?= $progressPercent ?>"
+                        >
+                            <span style="width: <?= $progressPercent ?>%"></span>
+                        </div>
+                    <?php else: ?>
+                        <div class="dashboard-project-progress-track is-empty" aria-hidden="true"></div>
+                    <?php endif; ?>
+                </div>
                 <div class="project-card-actions">
                     <a class="btn btn-secondary" href="/bricklab/projects.php?edit=<?= (int) $project['id'] ?>">
                         Edit build
@@ -549,7 +609,8 @@ require_once __DIR__ . '/includes/header.php';
         <?php foreach ($dashboardTaskHistory as $historyItem): ?>
             <?php
             $activityType = (string) $historyItem['activity_type'];
-            $activityTimestamp = strtotime((string) $historyItem['activity_at']);
+            $activityAt = $historyItem['activity_at'] ?? null;
+            $activityTimestamp = is_string($activityAt) ? strtotime($activityAt) : false;
             $activityLabel = $activityType === 'completed' ? 'Task completed' : 'Task created';
             ?>
             <article class="task-history-item">
@@ -559,17 +620,24 @@ require_once __DIR__ . '/includes/header.php';
                 ></span>
                 <div class="task-history-details">
                     <h3><?= escape_html((string) $historyItem['task_title']) ?></h3>
-                    <p><?= escape_html((string) $historyItem['project_title']) ?></p>
+                    <p>
+                        <?= escape_html((string) $historyItem['project_title']) ?>
+                        <span class="task-history-lifecycle">
+                            <?= $activityType === 'completed' && !empty($historyItem['completed_at'])
+                                ? 'Created → completed'
+                                : ($activityType === 'completed' ? 'Completed · date unavailable' : 'Not completed yet') ?>
+                        </span>
+                    </p>
                 </div>
                 <span class="task-history-type task-history-type-<?= escape_html($activityType) ?>">
                     <?= escape_html($activityLabel) ?>
                 </span>
                 <time
                     class="task-history-date"
-                    datetime="<?= escape_html((string) $historyItem['activity_at']) ?>"
+                    <?php if (is_string($activityAt)): ?>datetime="<?= escape_html($activityAt) ?>"<?php endif; ?>
                 >
                     <?= $activityTimestamp === false
-                        ? 'Date unavailable'
+                        ? ($activityType === 'completed' ? 'Completion date unavailable' : 'Date unavailable')
                         : escape_html(date('M j, Y, g:i A', $activityTimestamp)) ?>
                 </time>
             </article>

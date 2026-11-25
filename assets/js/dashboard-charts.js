@@ -364,7 +364,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (categoryChanged) {
             activeView = category === "builds" ? "build-activity" : "task-status";
-            periodSelect.value = "weekly";
+            periodSelect.value = "monthly";
         }
 
         renderChart();
